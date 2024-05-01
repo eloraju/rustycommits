@@ -12,3 +12,12 @@ pub enum Token {
     Underscore,
     EOF,
 }
+
+pub enum MessagePart {
+    Type,
+    Scope,
+    Description,
+    Body,
+    FooterKey,
+    FooterValue,
+}
