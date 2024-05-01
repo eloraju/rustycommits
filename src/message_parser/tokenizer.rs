@@ -1,22 +1,7 @@
+use super::types::Token;
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, Clone)]
-enum Token {
-    Word(String),
-    NewLine,
-    Dash,
-    Hash,
-    Colon,
-    Space,
-    Underscore,
-    OpenParenthesis,
-    CloseParenthesis,
-    Bang,
-    EOF,
-}
-
-struct Tokenizer<'a> {
-    message: &'a str,
+pub struct Tokenizer {
     pub tokens: Vec<Token>,
     buffer: String,
     config: HashMap<char, Token>,
@@ -33,8 +18,8 @@ struct Tokenizer<'a> {
  * - CloseParenthesis: ')'
  * - OpenParenthesis: '('
  */
-impl<'a> Tokenizer<'a> {
-    pub fn new(message: &str) -> Tokenizer {
+impl Tokenizer {
+    pub fn new() -> Tokenizer {
         let mut config: HashMap<char, Token> = HashMap::new();
         config.extend([
             ('\n', Token::NewLine),
@@ -43,20 +28,19 @@ impl<'a> Tokenizer<'a> {
             (':', Token::Colon),
             (' ', Token::Space),
             ('_', Token::Underscore),
-            ('(', Token::OpenParenthesis),
-            (')', Token::CloseParenthesis),
+            ('(', Token::ParenthesisOpen),
+            (')', Token::ParenthesisClose),
             ('!', Token::Bang),
         ]);
         Tokenizer {
-            message,
             tokens: Vec::new(),
             buffer: String::new(),
             config,
         }
     }
 
-    fn process(&mut self) {
-        for c in self.message.chars() {
+    fn process(&mut self, message: &str) {
+        for c in message.chars() {
             match self.config.get(&c) {
                 Some(token) => {
                     self.push_token(token.clone());
@@ -86,8 +70,8 @@ mod tests {
     #[test]
     fn should_tokenize_simple_header() {
         let message = "feat: add new feature";
-        let mut tokenizer = Tokenizer::new(message);
-        tokenizer.process();
+        let mut tokenizer = Tokenizer::new();
+        tokenizer.process(&message);
         assert_eq!(
             tokenizer.tokens,
             vec![
@@ -107,8 +91,8 @@ mod tests {
     #[test]
     fn should_tokenize_message_with_body() {
         let message = "feat: add new feature\n\nThis is the body of the message";
-        let mut tokenizer = Tokenizer::new(message);
-        tokenizer.process();
+        let mut tokenizer = Tokenizer::new();
+        tokenizer.process(&message);
         assert_eq!(
             tokenizer.tokens,
             vec![
@@ -143,8 +127,8 @@ mod tests {
     #[test]
     fn should_tokenize_message_with_body_and_footers() {
         let message = "feat!: add new feature\n\nThis is the body of the message\n\nBREAKING CHANGE: this is a breaking change";
-        let mut tokenizer = Tokenizer::new(message);
-        tokenizer.process();
+        let mut tokenizer = Tokenizer::new();
+        tokenizer.process(&message);
         assert_eq!(
             tokenizer.tokens,
             vec![
