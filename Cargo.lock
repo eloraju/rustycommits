@@ -3,12 +3,5 @@
 version = 3
 
 [[package]]
-name = "lib_lint"
-version = "0.1.0"
-
-[[package]]
 name = "rustycommits"
 version = "0.1.0"
-dependencies = [
- "lib_lint",
-]
