@@ -6,15 +6,13 @@ pub struct CommitMsg {
     pub msg_body: Option<String>,
     pub msg_footer: Option<String>,
 }
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Type(String),
     Scope(String),
     Description(String),
     Paragraph(String),
-    FooterKey(String),
-    FooterVal(String),
+    Word(String),
     NewLine,
     Dash,
     Hash,

@@ -70,7 +70,7 @@ impl<'a> Tokenizer<'a> {
                 self.tokens.push(Token::Paragraph(self.buffer.clone()));
             }
             TokenizerState::Footer => {
-                self.tokens.push(Token::Footer(self.buffer.clone()));
+                panic!("Footer should not call this method!")
             }
         }
         self.buffer.clear();
@@ -154,8 +154,19 @@ impl<'a> Tokenizer<'a> {
     fn tokenize_footer(&mut self, char: char) {
         match char {
             '\n' => {
-                self.consume_buffer();
+                self.tokens.push(Token::Word(self.buffer.clone()));
+                self.buffer.clear();
                 self.tokens.push(Token::NewLine);
+            }
+            ':' => {
+                self.tokens.push(Token::Word(self.buffer.clone()));
+                self.buffer.clear();
+                self.tokens.push(Token::Colon);
+            }
+            '-' => {
+                self.tokens.push(Token::Word(self.buffer.clone()));
+                self.buffer.clear();
+                self.tokens.push(Token::Dash);
             }
             _ => {
                 self.buffer.push(char);

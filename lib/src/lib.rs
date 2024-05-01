@@ -1,2 +1,2 @@
-pub mod message_parser;
+pub mod message_tokenizer;
 pub mod types;
