@@ -1,1 +1,1 @@
-mod message_parser;
+mod parser_lib;
