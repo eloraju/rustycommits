@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::parser_lib::lexer::types::token::Token;
+use crate::parser_lib::lexer::types::Token;
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct UnexpectedTokenError {
@@ -18,7 +18,7 @@ impl fmt::Display for UnexpectedTokenError {
         if f.alternate() {
             let pretty = vec![
                 format!(
-                    "Syntax error: Unexpected token '{}' at index {}",
+                    "Unexpected token '{}' at index {}",
                     self.token, self.token.start_i
                 ),
                 format!("{:?}", self.token.token_type),
@@ -27,28 +27,21 @@ impl fmt::Display for UnexpectedTokenError {
             .join("\n");
             write!(f, "{:?}", pretty)
         } else {
-            write!(
-                f,
-                "Syntax error: Unexpected token at index {}",
-                self.token.start_i
-            )
+            write!(f, "Unexpected token at index {}", self.token.start_i)
         }
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::parser_lib::lexer::types::token::generate_word_token;
+    use crate::parser_lib::test_utils::get_word_token;
 
     use super::*;
 
     #[test]
     fn should_return_error_message() {
-        let token = generate_word_token("test");
+        let token = get_word_token("test", 0);
         let error = UnexpectedTokenError::new(token);
-        assert_eq!(
-            error.to_string(),
-            "Syntax error: Unexpected token at index 0".to_string()
-        );
+        assert_eq!(error.to_string(), "Unexpected token at index 0".to_string());
     }
 }

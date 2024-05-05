@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::parser_lib::lexer::types::token::Token;
+use crate::parser_lib::lexer::types::Token;
 
 use super::enums::SymbolType;
 

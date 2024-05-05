@@ -1,2 +1,6 @@
+mod commit_message;
 pub mod enums;
-pub mod symbol;
+mod symbol;
+
+pub use self::commit_message::CommitMessage;
+pub use self::symbol::Symbol;

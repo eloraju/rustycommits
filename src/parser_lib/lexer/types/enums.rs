@@ -26,7 +26,7 @@ impl Display for TokenType {
             TokenType::Hash => write!(f, "#"),
             TokenType::NewLine => write!(f, "newline"),
             TokenType::ParenthesisClose => write!(f, ")"),
-            TokenType::ParenthesisOpen => write!(f, ")"),
+            TokenType::ParenthesisOpen => write!(f, "("),
             TokenType::Space => write!(f, "space"),
             TokenType::Underscore => write!(f, "_"),
             TokenType::EOF => write!(f, "EOF"),

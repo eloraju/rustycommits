@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use self::types::{enums::TokenType, token::Token};
+use self::types::{enums::TokenType, Token};
 
 pub mod types;
 

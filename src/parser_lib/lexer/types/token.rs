@@ -76,14 +76,3 @@ impl Display for Token {
         }
     }
 }
-
-pub fn generate_word_token(value: &str) -> Token {
-    let len = value.len();
-    Token {
-        token_type: TokenType::Word,
-        value: value.into(),
-        start_i: 0,
-        end_i: len - 1,
-        len,
-    }
-}

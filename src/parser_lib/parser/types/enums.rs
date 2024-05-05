@@ -3,6 +3,7 @@ pub enum ParserState {
     Type,
     Scope,
     Description,
+    BodyOrFooter,
     Body,
     Footer,
 }
@@ -16,5 +17,6 @@ pub enum SymbolType {
     FooterKey,
     FooterValue,
     SectionDivider,
+    BreakingChanges,
     None,
 }

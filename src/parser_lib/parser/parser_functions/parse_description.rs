@@ -1,10 +1,10 @@
 use crate::parser_lib::{
-    errors::unexpected_token_error::UnexpectedTokenError,
-    lexer::types::{enums::TokenType, token::Token},
+    errors::SyntaxError,
+    lexer::types::{enums::TokenType, Token},
     parser::{
         types::{
             enums::{ParserState, SymbolType},
-            symbol::Symbol,
+            Symbol,
         },
         Parser,
     },
@@ -13,8 +13,8 @@ use crate::parser_lib::{
 pub fn parse_description(
     parser: &mut Parser,
     current: &Token,
-    next: &Token,
-) -> Result<(), UnexpectedTokenError> {
+    next: Option<&Token>,
+) -> Result<(), SyntaxError> {
     match current.token_type {
         TokenType::Colon => {
             parser.symbols.push(Symbol {
@@ -23,23 +23,31 @@ pub fn parse_description(
             });
             return Ok(());
         }
-        TokenType::NewLine => match next.token_type {
-            TokenType::NewLine => {
-                parser.symbols.push(parser.symbol_buff.clone());
-                parser.symbols.push(Symbol {
-                    symbol_type: SymbolType::SectionDivider,
-                    tokens: vec![current.clone()],
-                });
-                parser.symbol_buff.clear();
+        TokenType::NewLine => match next {
+            Some(next) => match next.token_type {
+                TokenType::NewLine | TokenType::EOF => {
+                    parser.symbols.push(parser.symbol_buff.clone());
+                    parser.symbols.push(Symbol {
+                        symbol_type: SymbolType::SectionDivider,
+                        tokens: vec![current.clone()],
+                    });
+                    parser.symbol_buff.clear();
 
-                parser.state = ParserState::Body;
-                return Ok(());
-            }
-            _ => {
-                // description must end with two newlines
-                return Err(UnexpectedTokenError::new(next.clone()));
-            }
+                    parser.state = ParserState::Body;
+                    return Ok(());
+                }
+                _ => {
+                    // description must end with two newlines, no multiline descriptions allowed
+                    return SyntaxError::unexpected_token(current.clone());
+                }
+            },
+            None => Ok(()),
         },
+
+        TokenType::EOF => {
+            parser.symbols.push(parser.symbol_buff.clone());
+            return Ok(());
+        }
         _ => {
             parser.symbol_buff.tokens.push(current.clone());
             return Ok(());

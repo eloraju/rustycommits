@@ -1,2 +1,4 @@
 pub mod enums;
-pub mod token;
+mod token;
+
+pub use self::token::Token;

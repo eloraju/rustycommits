@@ -1,10 +1,10 @@
 use crate::parser_lib::{
-    errors::unexpected_token_error::UnexpectedTokenError,
-    lexer::types::{enums::TokenType, token::Token},
+    errors::SyntaxError,
+    lexer::types::{enums::TokenType, Token},
     parser::{
         types::{
             enums::{ParserState, SymbolType},
-            symbol::Symbol,
+            Symbol,
         },
         Parser,
     },
@@ -13,8 +13,8 @@ use crate::parser_lib::{
 pub fn parse_type(
     parser: &mut Parser,
     current: &Token,
-    next: &Token,
-) -> Result<(), UnexpectedTokenError> {
+    next: Option<&Token>,
+) -> Result<(), SyntaxError> {
     match current.token_type {
         TokenType::Word => {
             parser.symbols.push(Symbol {
@@ -22,62 +22,106 @@ pub fn parse_type(
                 tokens: vec![current.clone()],
             });
 
-            match next.token_type {
-                TokenType::ParenthesisOpen => {
-                    parser.state = ParserState::Scope;
-                    return Ok(());
-                }
+            match next {
+                Some(next) => match next.token_type {
+                    TokenType::ParenthesisOpen => {
+                        parser.state = ParserState::Scope;
+                        return Ok(());
+                    }
 
-                TokenType::Colon => {
-                    parser.state = ParserState::Description;
-                    return Ok(());
-                }
+                    TokenType::Colon => {
+                        parser.state = ParserState::Description;
+                        return Ok(());
+                    }
 
-                _ => {
-                    return Err(UnexpectedTokenError::new(next.clone()));
-                }
+                    TokenType::Bang => {
+                        return Ok(());
+                    }
+
+                    _ => SyntaxError::unexpected_token(next.clone()),
+                },
+                None => SyntaxError::end_of_file(current.clone()),
             }
         }
-        _ => Err(UnexpectedTokenError::new(current.clone())),
+
+        TokenType::Bang => {
+            if parser.symbols.is_empty() {
+                return SyntaxError::unexpected_token(current.clone());
+            }
+
+            parser.symbols.push(Symbol {
+                symbol_type: SymbolType::BreakingChanges,
+                tokens: vec![current.clone()],
+            });
+
+            match next {
+                Some(next) => match next.token_type {
+                    TokenType::Colon => {
+                        parser.state = ParserState::Description;
+                        return Ok(());
+                    }
+                    _ => SyntaxError::unexpected_token(next.clone()),
+                },
+                None => return SyntaxError::end_of_file(current.clone()),
+            }
+        }
+        _ => SyntaxError::unexpected_token(current.clone()),
     }
 }
 
 #[cfg(test)]
 mod tests {
-
-    use crate::parser_lib::lexer::types::token::generate_word_token;
-
     use super::*;
+    use crate::parser_lib::test_utils::{call_parser_function, TokenGenerator};
 
     #[test]
     fn should_parse_type_with_colon_after() {
-        let token = generate_word_token("feat");
-        let ok_next_token = Token {
-            token_type: TokenType::Colon,
-            value: ":".into(),
-            start_i: 4,
-            end_i: 4,
-            len: 1,
-        };
-        let mut parser = Parser::new();
-        let result = parse_type(&mut parser, &token, &ok_next_token);
-        assert!(result.is_ok());
-        assert!(parser.symbols.len() == 1);
-        assert!(parser.symbols[0].symbol_type == SymbolType::Type);
-        assert!(parser.state == ParserState::Description);
+        let tokens = TokenGenerator::new()
+            .add_word("feat")
+            .add_special(TokenType::Colon)
+            .generate();
+        let res = call_parser_function(tokens, parse_type);
+        assert!(res.is_err());
+        let (_, symbols) = res.err().unwrap();
+        assert_eq!(symbols.len(), 1);
+        assert!(symbols[0].symbol_type == SymbolType::Type);
+        assert!(symbols[0].len() == 4);
+        assert!(symbols[0].value() == "feat");
     }
     #[test]
     fn should_return_error_with_space_after_type() {
-        let token = generate_word_token("feat");
-        let error_next_token = Token {
-            token_type: TokenType::Word,
-            value: " ".into(),
-            start_i: 4,
-            end_i: 4,
-            len: 1,
-        };
-        let mut parser = Parser::new();
-        let result = parse_type(&mut parser, &token, &error_next_token);
+        let tokens = TokenGenerator::new()
+            .add_word("feat")
+            .add_special(TokenType::Space)
+            .generate();
+        let result = call_parser_function(tokens, parse_type);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn should_detect_bang_correctly() {
+        let tokens = TokenGenerator::new()
+            .add_word("feat")
+            .add_special(TokenType::Bang)
+            .generate();
+        let result = call_parser_function(tokens, parse_type);
+        assert!(result.is_err());
+        let (_, symbols) = result.err().unwrap();
+        assert_eq!(symbols.len(), 2);
+        assert_eq!(symbols[0].symbol_type, SymbolType::Type);
+        assert_eq!(symbols[1].symbol_type, SymbolType::BreakingChanges);
+    }
+
+    #[test]
+    fn should_return_error_if_bang_now_followed_by_colon() {
+        let tokens = TokenGenerator::new()
+            .add_word("feat")
+            .add_special(TokenType::Bang)
+            .add_special(TokenType::ParenthesisOpen)
+            .add_word("scope")
+            .add_special(TokenType::ParenthesisClose)
+            .generate();
+        let result = call_parser_function(tokens, parse_type);
         assert!(result.is_err());
     }
 }
