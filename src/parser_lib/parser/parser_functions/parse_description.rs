@@ -1,135 +1,94 @@
-use crate::parser_lib::{
-    errors::SyntaxError,
-    lexer::types::{enums::TokenType, Token},
-    parser::{
-        types::{enums::ParserState, Symbol},
-        Parser,
-    },
-};
+use std::vec::IntoIter;
 
-fn push_description(parser: &mut Parser) {
-    let end_delimiter = parser.token_buffer.pop().unwrap();
-    parser.symbols.push(Symbol::Description {
-        text_tokens: parser.token_buffer.clone(),
-        start_delimeter: parser.delim_buffer.clone(),
-        end_delimiter,
-    });
-    parser.token_buffer.clear();
-    parser.delim_buffer.clear();
-}
+use itertools::MultiPeek;
 
-pub fn parse_description(
-    parser: &mut Parser,
-    current: &Token,
-    next: Option<&Token>,
-) -> Result<(), SyntaxError> {
-    match current.token_type {
-        TokenType::Colon => match next {
-            Some(next) => match next.token_type {
-                TokenType::Space => {
-                    parser.delim_buffer.push(current.clone());
-                    return Ok(());
+use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
+
+pub fn parse_description(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, SyntaxError> {
+    let current = tokens.next();
+    match current {
+        Some(Token::Colon(_)) => {
+            let next_token = tokens.peek();
+            match next_token {
+                Some(Token::Space(_)) => {
+                    let start_delimeter = vec![current.unwrap(), tokens.next().unwrap()];
+                    let mut text_tokens: Vec<Token> = Vec::new();
+                    let mut end_delimiter: Vec<Token> = Vec::new();
+                    while let Some(token) = tokens.peek() {
+                        match token {
+                            Token::NewLine(_) => {
+                                end_delimiter.push(tokens.next().unwrap());
+                                let second_newline = tokens.peek();
+                                match second_newline {
+                                    Some(Token::NewLine(_)) => {
+                                        end_delimiter.push(tokens.next().unwrap());
+                                        return Ok(Symbol::Description {
+                                            start_delimeter,
+                                            text_tokens,
+                                            end_delimiter,
+                                        });
+                                    }
+                                    Some(token) => {
+                                        return Err(SyntaxError::UnexpectedTokenError(
+                                            token.clone(),
+                                        ))
+                                    }
+                                    None => {
+                                        return Ok(Symbol::Description {
+                                            start_delimeter,
+                                            text_tokens,
+                                            end_delimiter,
+                                        })
+                                    }
+                                };
+                            }
+                            _ => text_tokens.push(tokens.next().unwrap()),
+                        };
+                    }
+                    return Err(SyntaxError::UnexpectedEndOfFileError);
                 }
-                _ => return Err(SyntaxError::UnexpectedTokenError(next.clone())),
-            },
-            None => return Err(SyntaxError::UnexpectedEndOfFileError(current.clone())),
-        },
-        TokenType::NewLine => {
-            match next {
-                Some(next) => match next.token_type {
-                    TokenType::NewLine => {
-                        parser.token_buffer.push(current.clone());
-                        push_description(parser);
-
-                        parser.state = ParserState::Body;
-                        return Ok(());
-                    }
-                    _ => {
-                        // description must end with two newlines, no multiline descriptions allowed
-                        return Err(SyntaxError::UnexpectedTokenError(current.clone()));
-                    }
-                },
-                None => Ok(()),
+                Some(token) => return Err(SyntaxError::UnexpectedTokenError(token.clone())),
+                None => return Err(SyntaxError::UnexpectedEndOfFileError),
             }
         }
-        TokenType::Space => {
-            if let Some(last_token) = parser.delim_buffer.last() {
-                match last_token.token_type {
-                    TokenType::Colon => {
-                        parser.delim_buffer.push(current.clone());
-                        return Ok(());
-                    }
-                    TokenType::Space => {
-                        parser.token_buffer.push(current.clone());
-                        return Ok(());
-                    }
-                    _ => return Err(SyntaxError::UnexpectedTokenError(last_token.clone())),
-                }
-            } else {
-                return Err(SyntaxError::UnexpectedTokenError(current.clone()));
-            }
-        }
-        _ => match next {
-            Some(next) => match next.token_type {
-                _ => {
-                    parser.token_buffer.push(current.clone());
-                    return Ok(());
-                }
-            },
-            None => {
-                parser.token_buffer.push(current.clone());
-                push_description(parser);
-                return Ok(());
-            }
-        },
+        Some(token) => return Err(SyntaxError::UnexpectedTokenError(token)),
+        None => return Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::parser_lib::{
-        lexer::types::enums::TokenType,
-        parser::types::Symbol,
-        test_utils::{call_parser_function, TokenGenerator},
-    };
+    use crate::parser_lib::{parser::types::Symbol, test_utils::TokenGenerator};
 
     use super::parse_description;
     #[test]
     fn should_parse_description() {
-        let tokens = TokenGenerator::new()
-            .add_special(TokenType::Colon)
-            .add_special(TokenType::Space)
-            .add_word("description")
-            .add_special(TokenType::Space)
-            .add_word("is")
-            .add_special(TokenType::Space)
-            .add_word("this")
-            .add_special(TokenType::NewLine)
-            .add_special(TokenType::NewLine)
-            .generate();
-        let res = call_parser_function(tokens, parse_description);
-        match res {
-            Ok(symbols) => {
-                assert_eq!(symbols.len(), 1);
-                if let Some(symbol) = symbols.get(0) {
-                    match symbol {
-                        Symbol::Description {
-                            start_delimeter,
-                            text_tokens,
-                            end_delimiter,
-                        } => {
-                            assert_eq!(start_delimeter.len(), 2);
-                            assert_eq!(text_tokens.len(), 5);
-                            assert_eq!(symbol.raw_value(), ": description is this\n");
-                            assert_eq!(symbol.value(), "description is this");
-                        }
-                        _ => panic!("Expected Symbol::Description"),
-                    }
-                } else {
-                    panic!("Expected a symbol")
-                }
+        let mut tokens = TokenGenerator::new()
+            .colon()
+            .space()
+            .word("description")
+            .space()
+            .word("is")
+            .space()
+            .word("this")
+            .newline()
+            .newline()
+            .generate_iter();
+        let res = parse_description(&mut tokens);
+        let symbol = res.unwrap();
+        match &symbol {
+            Symbol::Description {
+                start_delimeter,
+                text_tokens,
+                end_delimiter,
+            } => {
+                assert_eq!(start_delimeter.len(), 2);
+                assert_eq!(text_tokens.len(), 5);
+                assert_eq!(end_delimiter.len(), 2);
+                assert_eq!(symbol.raw_value(), ": description is this\n\n");
+                assert_eq!(symbol.value(), "description is this");
             }
-            Err(e) => panic!("{}", e.0),
+            _ => panic!("Error: {:?}", symbol),
         }
     }
 }

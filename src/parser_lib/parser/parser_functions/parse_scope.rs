@@ -1,120 +1,65 @@
-use crate::parser_lib::{
-    errors::SyntaxError,
-    lexer::types::{enums::TokenType, Token},
-    parser::{
-        types::{enums::ParserState, Symbol},
-        Parser,
-    },
-};
+use std::vec::IntoIter;
 
-fn push_scope(parser: &mut Parser) {
-    let end_delimeter = parser.delim_buffer.pop();
-    let start_delimeter = parser.delim_buffer.pop();
-    let text_token = parser.token_buffer.pop();
-    match (start_delimeter, end_delimeter, text_token) {
-        (Some(start_delimeter), Some(end_delimeter), Some(text_token)) => {
-            parser.symbols.push(Symbol::Scope {
-                start_delimeter,
-                end_delimeter,
-                text_token,
-            });
-        }
-        _ => panic!(
-            "We shouldn't ever get here! Scope is missing start or end delimeter or text token!"
-        ),
-    }
-    parser.token_buffer.clear();
-    parser.delim_buffer.clear();
-}
+use itertools::MultiPeek;
 
-pub fn parse_scope(
-    parser: &mut Parser,
-    current: &Token,
-    next: Option<&Token>,
-) -> Result<(), SyntaxError> {
-    match current.token_type {
-        TokenType::ParenthesisOpen => {
-            parser.delim_buffer.push(current.clone());
-            return Ok(());
-        }
+use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
 
-        TokenType::Word => {
-            parser.token_buffer.push(current.clone());
-            return match next {
-                Some(next) => match next.token_type {
-                    TokenType::ParenthesisClose => Ok(()),
-                    _ => Err(SyntaxError::UnexpectedTokenError(next.clone())),
-                },
-                None => Err(SyntaxError::UnexpectedEndOfFileError(current.clone())),
-            };
-        }
+pub fn parse_scope(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, SyntaxError> {
+    let current = tokens.next();
 
-        TokenType::ParenthesisClose => {
-            if parser.token_buffer.len() == 0 {
-                return Err(SyntaxError::UnexpectedTokenError(current.clone()));
-            }
-
-            parser.delim_buffer.push(current.clone());
-            push_scope(parser);
-
-            match next {
-                Some(next) => match next.token_type {
-                    TokenType::Colon => {
-                        parser.state = ParserState::Description;
-                        return Ok(());
+    match current {
+        Some(Token::ParenthesisOpen(_)) => {
+            let expected_word = tokens.peek();
+            match expected_word {
+                Some(Token::Word(_)) => {
+                    let text_token = tokens.next().unwrap();
+                    let expected_closing_parenthesis = tokens.peek();
+                    match expected_closing_parenthesis {
+                        Some(Token::ParenthesisClose(_)) => {
+                            let end_delimeter = tokens.next();
+                            return Ok(Symbol::Scope {
+                                start_delimeter: current.unwrap(),
+                                end_delimeter: end_delimeter.unwrap(),
+                                text_token,
+                            });
+                        }
+                        Some(token) => {
+                            return Err(SyntaxError::UnexpectedTokenError(token.clone()))
+                        }
+                        None => return Err(SyntaxError::UnexpectedEndOfFileError),
                     }
-                    _ => return Err(SyntaxError::UnexpectedTokenError(next.clone())),
-                },
-                None => return Err(SyntaxError::UnexpectedEndOfFileError(current.clone())),
-            };
+                }
+                Some(unexpected) => {
+                    return Err(SyntaxError::UnexpectedTokenError(unexpected.clone()))
+                }
+                None => return Err(SyntaxError::UnexpectedEndOfFileError),
+            }
         }
-
-        _ => return Err(SyntaxError::UnexpectedTokenError(current.clone())),
+        Some(token) => return Err(SyntaxError::UnexpectedTokenError(token)),
+        None => return Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::parser_lib::{
-        lexer::types::enums::TokenType,
-        parser::{
-            parser_functions::parse_scope,
-            types::{enums::ParserState, Symbol},
-            Parser,
-        },
-        test_utils::{call_parser_function, TokenGenerator},
+        parser::{parser_functions::parse_scope, types::Symbol},
+        test_utils::TokenGenerator,
     };
 
     #[test]
     fn should_parse_scope_with_word() {
-        let tokens = TokenGenerator::new()
-            .add_special(TokenType::ParenthesisOpen)
-            .add_word("scope")
-            .add_special(TokenType::ParenthesisClose)
-            .add_special(TokenType::Colon)
-            .generate();
-        let mut parser = Parser::new();
-        parser.state = ParserState::Scope;
-        let res = call_parser_function(tokens, parse_scope);
-        assert!(res.is_err());
-        let (_, symbols) = res.err().unwrap();
-        assert_eq!(symbols.len(), 1);
-        assert!(matches!(symbols[0], Symbol::Scope { .. }));
-        assert_eq!(symbols[0].content_length(), 5);
-        assert_eq!(symbols[0].total_length(), 7);
-        assert_eq!(symbols[0].raw_value(), "(scope)");
-        assert_eq!(symbols[0].value(), "scope");
-    }
-
-    #[test]
-    fn should_return_error_when_missing_closing_parenthesis() {
-        let tokens = TokenGenerator::new()
-            .add_special(TokenType::ParenthesisOpen)
-            .add_word("scope")
-            .add_special(TokenType::Colon)
-            .generate();
-
-        let res = call_parser_function(tokens, parse_scope);
-        assert!(res.is_err());
+        let mut tokens = TokenGenerator::new()
+            .parenthesis_open()
+            .word("scope")
+            .parenthesis_close()
+            .generate_iter();
+        let res = parse_scope(&mut tokens);
+        let symbol = res.unwrap();
+        assert!(matches!(symbol, Symbol::Scope { .. }));
+        assert_eq!(symbol.content_length(), 5);
+        assert_eq!(symbol.total_length(), 7);
+        assert_eq!(symbol.raw_value(), "(scope)");
+        assert_eq!(symbol.value(), "scope");
     }
 }

@@ -4,8 +4,8 @@ use super::lexer::types::Token;
 
 #[derive(Error, Debug)]
 pub enum SyntaxError {
-    #[error("Syntax error: Unexpected token '{}' at index {}", .0.token_type, .0.start_i)]
+    #[error("Syntax error: Unexpected token '{0}' at index {}", .0.get_start_index())]
     UnexpectedTokenError(Token),
-    #[error("Syntax error: Unexpted end of file after '{0}'")]
-    UnexpectedEndOfFileError(Token),
+    #[error("Syntax error: Unexpted end of file")]
+    UnexpectedEndOfFileError,
 }

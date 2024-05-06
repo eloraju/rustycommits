@@ -18,15 +18,17 @@ pub enum Symbol {
     Description {
         text_tokens: Vec<Token>,
         start_delimeter: Vec<Token>,
-        end_delimiter: Token,
+        end_delimiter: Vec<Token>,
     },
     Body {
         text_tokens: Vec<Token>,
-        start_separator: Token,
-        end_separator: Token,
+        end_delimeter: Vec<Token>,
     },
     Footer {
         tokens: Vec<Token>,
+    },
+    BrakingChange {
+        text_token: Token,
     },
 }
 
@@ -41,6 +43,7 @@ impl Symbol {
                 ..
             } => tokens.iter().collect(),
             Symbol::Footer { tokens } => tokens.iter().collect(),
+            Symbol::BrakingChange { text_token } => vec![text_token],
         }
     }
 
@@ -71,21 +74,21 @@ impl Symbol {
                 let mut tokens = vec![];
                 tokens.extend(start_delimeter);
                 tokens.extend(text_tokens);
-                tokens.push(end_delimiter);
+                tokens.extend(end_delimiter);
                 return tokens;
             }
             Symbol::Body {
                 text_tokens,
-                start_separator,
-                end_separator,
+                end_delimeter: end_separator,
             } => {
-                let mut tokens = vec![start_separator];
+                let mut tokens: Vec<&Token> = Vec::new();
                 tokens.extend(text_tokens);
-                tokens.push(end_separator);
+                tokens.extend(end_separator);
                 return tokens;
             }
 
             Symbol::Footer { tokens } => tokens.iter().collect(),
+            Symbol::BrakingChange { text_token } => vec![text_token],
         }
     }
     pub fn raw_value(&self) -> String {
@@ -101,18 +104,22 @@ impl Symbol {
     }
 
     pub fn content_length(&self) -> usize {
-        return self.get_content_tokens().iter().map(|t| t.len).sum();
+        return self
+            .get_content_tokens()
+            .iter()
+            .map(|t| t.get_length())
+            .sum();
     }
 
     pub fn total_length(&self) -> usize {
-        return self.get_all_tokens().iter().map(|t| t.len).sum();
+        return self.get_all_tokens().iter().map(|t| t.get_length()).sum();
     }
 
     pub fn start_i(&self) -> usize {
-        return self.get_all_tokens().first().unwrap().start_i;
+        return self.get_all_tokens().first().unwrap().get_start_index();
     }
 
     pub fn end_i(&self) -> usize {
-        return self.get_all_tokens().last().unwrap().end_i;
+        return self.get_all_tokens().last().unwrap().get_start_index();
     }
 }
