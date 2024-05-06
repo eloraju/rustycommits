@@ -2,13 +2,18 @@ use crate::parser_lib::{
     errors::SyntaxError,
     lexer::types::{enums::TokenType, Token},
     parser::{
-        types::{
-            enums::{ParserState, SymbolType},
-            Symbol,
-        },
+        types::{enums::ParserState, Symbol},
         Parser,
     },
 };
+
+fn push_type(parser: &mut Parser, braking_change_token: Option<Token>) {
+    parser.symbols.push(Symbol::Type {
+        text_token: parser.token_buffer.pop().unwrap().clone(),
+        braking_change_token,
+    });
+    parser.token_buffer.clear();
+}
 
 pub fn parse_type(
     parser: &mut Parser,
@@ -17,19 +22,18 @@ pub fn parse_type(
 ) -> Result<(), SyntaxError> {
     match current.token_type {
         TokenType::Word => {
-            parser.symbols.push(Symbol {
-                symbol_type: SymbolType::Type,
-                tokens: vec![current.clone()],
-            });
+            parser.token_buffer.push(current.clone());
 
             match next {
                 Some(next) => match next.token_type {
                     TokenType::ParenthesisOpen => {
+                        push_type(parser, None);
                         parser.state = ParserState::Scope;
                         return Ok(());
                     }
 
                     TokenType::Colon => {
+                        push_type(parser, None);
                         parser.state = ParserState::Description;
                         return Ok(());
                     }
@@ -38,21 +42,17 @@ pub fn parse_type(
                         return Ok(());
                     }
 
-                    _ => SyntaxError::unexpected_token(next.clone()),
+                    _ => Err(SyntaxError::UnexpectedTokenError(next.clone())),
                 },
-                None => SyntaxError::end_of_file(current.clone()),
+                None => Err(SyntaxError::UnexpectedEndOfFileError(current.clone())),
             }
         }
 
         TokenType::Bang => {
-            if parser.symbols.is_empty() {
-                return SyntaxError::unexpected_token(current.clone());
+            if parser.token_buffer.is_empty() {
+                return Err(SyntaxError::UnexpectedTokenError(current.clone()));
             }
-
-            parser.symbols.push(Symbol {
-                symbol_type: SymbolType::BreakingChanges,
-                tokens: vec![current.clone()],
-            });
+            push_type(parser, Some(current.clone()));
 
             match next {
                 Some(next) => match next.token_type {
@@ -60,12 +60,12 @@ pub fn parse_type(
                         parser.state = ParserState::Description;
                         return Ok(());
                     }
-                    _ => SyntaxError::unexpected_token(next.clone()),
+                    _ => Err(SyntaxError::UnexpectedTokenError(next.clone())),
                 },
-                None => return SyntaxError::end_of_file(current.clone()),
+                None => return Err(SyntaxError::UnexpectedEndOfFileError(current.clone())),
             }
         }
-        _ => SyntaxError::unexpected_token(current.clone()),
+        _ => Err(SyntaxError::UnexpectedTokenError(current.clone())),
     }
 }
 
@@ -84,9 +84,9 @@ mod tests {
         assert!(res.is_err());
         let (_, symbols) = res.err().unwrap();
         assert_eq!(symbols.len(), 1);
-        assert!(symbols[0].symbol_type == SymbolType::Type);
-        assert!(symbols[0].len() == 4);
-        assert!(symbols[0].value() == "feat");
+        assert!(matches!(symbols[0], Symbol::Type { .. }));
+        assert_eq!(symbols[0].content_length(), 4);
+        assert_eq!(symbols[0].raw_value(), "feat");
     }
     #[test]
     fn should_return_error_with_space_after_type() {
@@ -107,19 +107,30 @@ mod tests {
         let result = call_parser_function(tokens, parse_type);
         assert!(result.is_err());
         let (_, symbols) = result.err().unwrap();
-        assert_eq!(symbols.len(), 2);
-        assert_eq!(symbols[0].symbol_type, SymbolType::Type);
-        assert_eq!(symbols[1].symbol_type, SymbolType::BreakingChanges);
+        match &symbols[0] {
+            Symbol::Type {
+                braking_change_token,
+                ..
+            } => {
+                if let Some(token) = braking_change_token {
+                    assert_eq!(token.token_type, TokenType::Bang);
+                } else {
+                    panic!("Expected braking change token");
+                }
+            }
+            _ => panic!("Wrong symbol type"),
+        }
+        assert_eq!(symbols.len(), 1);
+        assert_eq!(symbols[0].value(), "feat");
+        assert_eq!(symbols[0].raw_value(), "feat!");
     }
 
     #[test]
-    fn should_return_error_if_bang_now_followed_by_colon() {
+    fn should_return_error_if_bang_not_followed_by_colon() {
         let tokens = TokenGenerator::new()
             .add_word("feat")
             .add_special(TokenType::Bang)
             .add_special(TokenType::ParenthesisOpen)
-            .add_word("scope")
-            .add_special(TokenType::ParenthesisClose)
             .generate();
         let result = call_parser_function(tokens, parse_type);
         assert!(result.is_err());

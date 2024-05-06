@@ -61,6 +61,12 @@ pub mod test_utils {
         tokens: Vec<Token>,
     }
 
+    impl From<Vec<Token>> for TokenGenerator {
+        fn from(tokens: Vec<Token>) -> Self {
+            TokenGenerator { tokens }
+        }
+    }
+
     impl TokenGenerator {
         pub fn new() -> TokenGenerator {
             TokenGenerator { tokens: Vec::new() }
@@ -78,7 +84,6 @@ pub mod test_utils {
         }
 
         pub fn generate(&mut self) -> Vec<Token> {
-            self.add_special(TokenType::EOF);
             return self.tokens.clone();
         }
 

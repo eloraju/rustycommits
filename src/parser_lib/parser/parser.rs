@@ -3,14 +3,16 @@ use itertools::Itertools;
 use crate::parser_lib::{errors::SyntaxError, lexer::types::Token};
 
 use super::{
-    parser_functions::{parse_description, parse_scope, parse_type},
-    types::{enums::ParserState, Symbol},
+    parser_functions::{parse_body, parse_description, parse_scope, parse_type},
+    types::{enums::ParserState, CommitMessage, Symbol},
 };
 
 pub struct Parser {
     pub state: ParserState,
     pub symbols: Vec<Symbol>,
-    pub symbol_buff: Symbol,
+    pub token_buffer: Vec<Token>,
+    pub delim_buffer: Vec<Token>,
+    pub result: CommitMessage,
 }
 
 impl Parser {
@@ -18,12 +20,18 @@ impl Parser {
         Parser {
             state: ParserState::Type,
             symbols: Vec::new(),
-            symbol_buff: Symbol::default(),
+            token_buffer: Vec::new(),
+            delim_buffer: Vec::new(),
+            result: CommitMessage::default(),
         }
     }
 
     pub fn process(&mut self, tokens: Vec<Token>) -> Result<Vec<Symbol>, SyntaxError> {
+        // This iterator returns a tuple of type (&Token, Option<&Token>).
+        // Without this the tuple window would not return the last element
+        // as current if there was an uneven amount of tokens in the vector
         for (current, next) in tokens
+            // TODO: Check can we use into_iter instead and get rid of the .clone calls down the line
             .iter()
             .map(Some)
             .chain([None])
@@ -34,10 +42,9 @@ impl Parser {
                 ParserState::Type => parse_type(self, current, next),
                 ParserState::Scope => parse_scope(self, current, next),
                 ParserState::Description => parse_description(self, current, next),
-                _ => Ok(()),
-                //ParserState::Body => self.parse_body(current, next),
+                ParserState::Body => parse_body(self, current, next),
                 //ParserState::Footer => (),
-                //ParserState::SyntaxError => break,
+                _ => Ok(()),
             };
 
             if let Err(e) = res {
@@ -52,7 +59,7 @@ impl Parser {
 
     fn reset(&mut self) {
         self.state = ParserState::Type;
-        self.symbol_buff.clear();
+        self.token_buffer.clear();
         self.symbols.clear();
     }
 }

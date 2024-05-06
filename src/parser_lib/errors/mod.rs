@@ -1,38 +1,11 @@
-mod unexpected_end_of_file;
-mod unexpected_token_error;
-
-use std::fmt;
-
-use unexpected_end_of_file::UnexpectedEndOfFileError;
-use unexpected_token_error::UnexpectedTokenError;
+use thiserror::Error;
 
 use super::lexer::types::Token;
 
-#[derive(Debug)]
+#[derive(Error, Debug)]
 pub enum SyntaxError {
-    UnexpectedTokenError(UnexpectedTokenError),
-    UnexpectedEndOfFileError(UnexpectedEndOfFileError),
-}
-
-impl SyntaxError {
-    pub fn unexpected_token(token: Token) -> Result<(), SyntaxError> {
-        return Err(SyntaxError::UnexpectedTokenError(
-            UnexpectedTokenError::new(token),
-        ));
-    }
-
-    pub fn end_of_file(token: Token) -> Result<(), SyntaxError> {
-        return Err(SyntaxError::UnexpectedEndOfFileError(
-            UnexpectedEndOfFileError::new(token),
-        ));
-    }
-}
-
-impl fmt::Display for SyntaxError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            SyntaxError::UnexpectedTokenError(e) => write!(f, "Syntax error: {}", e),
-            SyntaxError::UnexpectedEndOfFileError(e) => write!(f, "Syntax error: {}", e),
-        }
-    }
+    #[error("Syntax error: Unexpected token '{}' at index {}", .0.token_type, .0.start_i)]
+    UnexpectedTokenError(Token),
+    #[error("Syntax error: Unexpted end of file after '{0}'")]
+    UnexpectedEndOfFileError(Token),
 }

@@ -43,36 +43,16 @@ impl Default for Token {
 
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if f.alternate() {
-            match self.token_type {
-                TokenType::Word => write!(f, "{}", self.value),
-                TokenType::Bang => write!(f, "'!'"),
-                TokenType::Colon => write!(f, "':'"),
-                TokenType::Dash => write!(f, "'-'"),
-                TokenType::Hash => write!(f, "'#'"),
-                TokenType::NewLine => write!(f, "'\\n'"),
-                TokenType::ParenthesisClose => write!(f, "')'"),
-                TokenType::ParenthesisOpen => write!(f, "'('"),
-                TokenType::Space => write!(f, "' '"),
-                TokenType::Underscore => write!(f, "'_'"),
-                TokenType::EOF => write!(f, "EOF"),
-                TokenType::None => write!(f, "NONE"),
-            }
-        } else {
-            match self.token_type {
-                TokenType::Word => write!(f, "'{}'", self.value),
-                TokenType::Bang => write!(f, "bang '!'"),
-                TokenType::Colon => write!(f, "colon ':'"),
-                TokenType::Dash => write!(f, "dash '-'"),
-                TokenType::Hash => write!(f, "hash '#'"),
-                TokenType::NewLine => write!(f, "newline '\\n'"),
-                TokenType::ParenthesisClose => write!(f, "closing parenthesis ')'"),
-                TokenType::ParenthesisOpen => write!(f, "opening parenthesis '('"),
-                TokenType::Space => write!(f, "space ' '"),
-                TokenType::Underscore => write!(f, "underscore '_'"),
-                TokenType::EOF => write!(f, "NONE"),
-                TokenType::None => write!(f, "NONE"),
-            }
+        match self.token_type {
+            TokenType::Word => write!(f, "{}", self.value),
+            TokenType::Bang => write!(f, "!"),
+            TokenType::Colon => write!(f, ":"),
+            TokenType::Hash => write!(f, "#"),
+            TokenType::NewLine => write!(f, "\n"),
+            TokenType::ParenthesisClose => write!(f, ")"),
+            TokenType::ParenthesisOpen => write!(f, "("),
+            TokenType::Space => write!(f, " "),
+            TokenType::None => write!(f, "NONE"),
         }
     }
 }
