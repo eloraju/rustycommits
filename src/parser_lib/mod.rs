@@ -1,76 +1,123 @@
 pub mod errors;
 pub mod lexer;
 pub mod parser;
+mod slicable_rc_string;
+
+pub use slicable_rc_string::SlicableRcString;
 
 #[cfg(test)]
 pub mod test_utils {
-    use std::vec::IntoIter;
+    use std::{rc::Rc, vec::IntoIter};
 
     use itertools::{Itertools, MultiPeek};
 
-    use super::lexer::types::{Token, WordDetails};
-    pub struct TokenGenerator {
-        tokens: Vec<Token>,
+    use super::{
+        lexer::types::{Token, WordDetails},
+        SlicableRcString,
+    };
+
+    enum TokenType {
+        Word { start_index: usize, len: usize },
+        Space(usize),
+        Colon(usize),
+        NewLine(usize),
+        ParenthesisOpen(usize),
+        ParenthesisClose(usize),
+    }
+    pub struct TestTokens {
+        test_token_buf: Vec<TokenType>,
+        string: String,
     }
 
-    impl From<Vec<Token>> for TokenGenerator {
-        fn from(tokens: Vec<Token>) -> Self {
-            TokenGenerator { tokens }
+    impl TestTokens {
+        pub fn new() -> TestTokens {
+            TestTokens {
+                test_token_buf: Vec::new(),
+                string: String::new(),
+            }
         }
-    }
 
-    impl TokenGenerator {
-        pub fn new() -> TokenGenerator {
-            TokenGenerator { tokens: Vec::new() }
+        fn next_index(&self) -> usize {
+            self.string.len()
         }
 
         pub fn word(&mut self, value: &str) -> &mut Self {
-            self.tokens.push(Token::Word(WordDetails::new(
-                value.into(),
-                self.next_index(),
-                value.len(),
-            )));
+            let len = value.len();
+            self.test_token_buf.push(TokenType::Word {
+                start_index: self.next_index(),
+                len,
+            });
+            self.string.push_str(value);
             return self;
         }
 
         pub fn space(&mut self) -> &mut Self {
-            self.tokens.push(Token::Space(self.next_index()));
+            self.test_token_buf
+                .push(TokenType::Space(self.next_index()));
+            self.string.push(' ');
             return self;
         }
 
         pub fn colon(&mut self) -> &mut Self {
-            self.tokens.push(Token::Colon(self.next_index()));
+            self.test_token_buf
+                .push(TokenType::Colon(self.next_index()));
+            self.string.push(':');
             return self;
         }
 
         pub fn newline(&mut self) -> &mut Self {
-            self.tokens.push(Token::NewLine(self.next_index()));
+            self.test_token_buf
+                .push(TokenType::NewLine(self.next_index()));
+            self.string.push('\n');
             return self;
         }
 
         pub fn parenthesis_open(&mut self) -> &mut Self {
-            self.tokens.push(Token::ParenthesisOpen(self.next_index()));
+            self.test_token_buf
+                .push(TokenType::ParenthesisOpen(self.next_index()));
+            self.string.push('(');
             return self;
         }
 
         pub fn parenthesis_close(&mut self) -> &mut Self {
-            self.tokens.push(Token::ParenthesisClose(self.next_index()));
+            self.test_token_buf
+                .push(TokenType::ParenthesisClose(self.next_index()));
+            self.string.push(')');
             return self;
         }
 
         pub fn generate(&mut self) -> Vec<Token> {
-            return self.tokens.clone();
+            let mut tokens: Vec<Token> = Vec::new();
+            let slicable_rc_string = SlicableRcString::new(Rc::new(self.string.clone()));
+            for token in self.test_token_buf.iter() {
+                match token {
+                    TokenType::Word { start_index, len } => {
+                        tokens.push(Token::Word(WordDetails::new(
+                            slicable_rc_string.substr(*start_index..*start_index + len),
+                        )));
+                    }
+                    TokenType::Space(index) => {
+                        tokens.push(Token::Space(slicable_rc_string.substr(*index..*index + 1)))
+                    }
+                    TokenType::Colon(index) => {
+                        tokens.push(Token::Colon(slicable_rc_string.substr(*index..*index + 1)))
+                    }
+                    TokenType::NewLine(index) => tokens.push(Token::NewLine(
+                        slicable_rc_string.substr(*index..*index + 1),
+                    )),
+                    TokenType::ParenthesisClose(index) => tokens.push(Token::ParenthesisClose(
+                        slicable_rc_string.substr(*index..*index + 1),
+                    )),
+                    TokenType::ParenthesisOpen(index) => tokens.push(Token::ParenthesisOpen(
+                        slicable_rc_string.substr(*index..*index + 1),
+                    )),
+                }
+            }
+            return tokens;
         }
 
         pub fn generate_iter(&mut self) -> MultiPeek<IntoIter<Token>> {
-            return self.tokens.clone().into_iter().multipeek();
-        }
-
-        fn next_index(&self) -> usize {
-            match self.tokens.last() {
-                None => 0,
-                _ => self.tokens.last().unwrap().get_end_index() + 1,
-            }
+            return self.generate().into_iter().multipeek();
         }
     }
 }

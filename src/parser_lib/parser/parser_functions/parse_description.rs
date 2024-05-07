@@ -1,69 +1,99 @@
 use std::vec::IntoIter;
 
-use itertools::MultiPeek;
+use itertools::{Itertools, MultiPeek};
 
 use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
 
-pub fn parse_description(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, SyntaxError> {
-    let current = tokens.next();
+fn check_bang(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Token>, SyntaxError> {
+    let current = tokens.peek();
     match current {
-        Some(Token::Colon(_)) => {
-            let next_token = tokens.peek();
-            match next_token {
-                Some(Token::Space(_)) => {
-                    let start_delimeter = vec![current.unwrap(), tokens.next().unwrap()];
-                    let mut text_tokens: Vec<Token> = Vec::new();
-                    let mut end_delimiter: Vec<Token> = Vec::new();
-                    while let Some(token) = tokens.peek() {
-                        match token {
-                            Token::NewLine(_) => {
-                                end_delimiter.push(tokens.next().unwrap());
-                                let second_newline = tokens.peek();
-                                match second_newline {
-                                    Some(Token::NewLine(_)) => {
-                                        end_delimiter.push(tokens.next().unwrap());
-                                        return Ok(Symbol::Description {
-                                            start_delimeter,
-                                            text_tokens,
-                                            end_delimiter,
-                                        });
-                                    }
-                                    Some(token) => {
-                                        return Err(SyntaxError::UnexpectedTokenError(
-                                            token.clone(),
-                                        ))
-                                    }
-                                    None => {
-                                        return Ok(Symbol::Description {
-                                            start_delimeter,
-                                            text_tokens,
-                                            end_delimiter,
-                                        })
-                                    }
-                                };
-                            }
-                            _ => text_tokens.push(tokens.next().unwrap()),
-                        };
-                    }
-                    return Err(SyntaxError::UnexpectedEndOfFileError);
-                }
-                Some(token) => return Err(SyntaxError::UnexpectedTokenError(token.clone())),
-                None => return Err(SyntaxError::UnexpectedEndOfFileError),
-            }
-        }
-        Some(token) => return Err(SyntaxError::UnexpectedTokenError(token)),
-        None => return Err(SyntaxError::UnexpectedEndOfFileError),
+        Some(Token::Bang(_)) => Ok(tokens.next()),
+        Some(_) => Ok(None),
+        None => Err(SyntaxError::UnexpectedEndOfFileError),
     }
+}
+
+fn check_start_delimiter(
+    tokens: &mut MultiPeek<IntoIter<Token>>,
+) -> Result<Vec<Token>, SyntaxError> {
+    let current = tokens.next();
+    let next = tokens.peek();
+    match (&current, next) {
+        (Some(Token::Colon(_)), Some(Token::Space(_))) => {
+            Ok(vec![current.unwrap(), tokens.next().unwrap()])
+        }
+        (Some(Token::Colon(_)), Some(_)) => {
+            Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap()))
+        }
+        (Some(_), _) => Err(SyntaxError::UnexpectedTokenError(current.unwrap())),
+        (None, _) => Err(SyntaxError::UnexpectedEndOfFileError),
+    }
+}
+
+fn take_words(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Vec<Token>, SyntaxError> {
+    let next = tokens.peek();
+    match next {
+        Some(Token::Word(_)) => {}
+        Some(_) => return Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap())),
+        None => return Err(SyntaxError::UnexpectedEndOfFileError),
+    };
+
+    Ok(tokens
+        .take_while_ref(|token| match token {
+            Token::NewLine(_) => false,
+            _ => true,
+        })
+        .collect_vec())
+}
+
+fn check_end_delimiter(
+    tokens: &mut MultiPeek<IntoIter<Token>>,
+) -> Result<Option<Vec<Token>>, SyntaxError> {
+    let mut end_delimiter: Vec<Token> = Vec::new();
+    let current = tokens.next();
+    let next = tokens.peek();
+    match (&current, next) {
+        (Some(Token::NewLine(_)), Some(Token::NewLine(_))) => {
+            end_delimiter.push(current.unwrap());
+            end_delimiter.push(tokens.next().unwrap());
+            Ok(Some(end_delimiter))
+        }
+        (Some(Token::NewLine(_)), None) => {
+            end_delimiter.push(current.unwrap());
+            Ok(Some(end_delimiter))
+        }
+        (None, _) => Ok(None),
+        (Some(Token::NewLine(_)), Some(_)) => {
+            Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap()))
+        }
+        (Some(_), _) => Err(SyntaxError::UnexpectedTokenError(current.unwrap())),
+    }
+}
+
+pub fn parse_description(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, SyntaxError> {
+    let braking_change_token = check_bang(tokens)?;
+    let start_delimeter = check_start_delimiter(tokens)?;
+    let text_tokens = take_words(tokens)?;
+    let end_delimiter = check_end_delimiter(tokens)?;
+
+    return Ok(Symbol::Description {
+        start_delimeter: start_delimeter,
+        text_tokens: text_tokens,
+        end_delimiter: end_delimiter,
+        braking_change_token: braking_change_token,
+    });
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::parser_lib::{parser::types::Symbol, test_utils::TokenGenerator};
+    use itertools::Itertools;
+
+    use crate::parser_lib::{parser::types::Symbol, test_utils::TestTokens};
 
     use super::parse_description;
     #[test]
     fn should_parse_description() {
-        let mut tokens = TokenGenerator::new()
+        let mut tokens = TestTokens::new()
             .colon()
             .space()
             .word("description")
@@ -73,20 +103,22 @@ mod tests {
             .word("this")
             .newline()
             .newline()
-            .generate_iter();
-        let res = parse_description(&mut tokens);
+            .generate();
+        dbg!(&tokens);
+        let res = parse_description(&mut tokens.into_iter().multipeek());
         let symbol = res.unwrap();
         match &symbol {
             Symbol::Description {
                 start_delimeter,
                 text_tokens,
                 end_delimiter,
+                braking_change_token: _,
             } => {
                 assert_eq!(start_delimeter.len(), 2);
                 assert_eq!(text_tokens.len(), 5);
-                assert_eq!(end_delimiter.len(), 2);
+                assert_eq!(end_delimiter.as_ref().unwrap().len(), 2);
                 assert_eq!(symbol.raw_value(), ": description is this\n\n");
-                assert_eq!(symbol.value(), "description is this");
+                assert_eq!(symbol.value().to_string(), "description is this");
             }
             _ => panic!("Error: {:?}", symbol),
         }

@@ -1,6 +1,20 @@
 use itertools::Itertools;
 
-use crate::parser_lib::lexer::types::Token;
+use crate::parser_lib::{lexer::types::Token, SlicableRcString};
+
+trait SRcStringFromTokens {
+    fn to_srcs(&self) -> SlicableRcString;
+}
+
+impl SRcStringFromTokens for Vec<&Token> {
+    fn to_srcs(&self) -> SlicableRcString {
+        let first = self.first().unwrap();
+        let last = self.last().unwrap();
+        dbg!(first, last);
+        dbg!(first.get_start_index(), last.get_end_index());
+        return first.get_super_slice(first.get_start_index()..last.get_end_index());
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Symbol {
@@ -8,7 +22,6 @@ pub enum Symbol {
     // e.g. word casing and delimiters
     Type {
         text_token: Token,
-        braking_change_token: Option<Token>,
     },
     Scope {
         text_token: Token,
@@ -18,17 +31,15 @@ pub enum Symbol {
     Description {
         text_tokens: Vec<Token>,
         start_delimeter: Vec<Token>,
-        end_delimiter: Vec<Token>,
+        end_delimiter: Option<Vec<Token>>,
+        braking_change_token: Option<Token>,
     },
     Body {
         text_tokens: Vec<Token>,
-        end_delimeter: Vec<Token>,
+        end_delimeter: Option<Vec<Token>>,
     },
     Footer {
         tokens: Vec<Token>,
-    },
-    BrakingChange {
-        text_token: Token,
     },
 }
 
@@ -43,21 +54,13 @@ impl Symbol {
                 ..
             } => tokens.iter().collect(),
             Symbol::Footer { tokens } => tokens.iter().collect(),
-            Symbol::BrakingChange { text_token } => vec![text_token],
         }
     }
 
     pub fn get_all_tokens(&self) -> Vec<&Token> {
         match self {
-            Symbol::Type {
-                braking_change_token,
-                text_token,
-            } => {
-                if let Some(braking_token) = braking_change_token {
-                    return vec![text_token, braking_token];
-                } else {
-                    return vec![text_token];
-                }
+            Symbol::Type { text_token } => {
+                return vec![text_token];
             }
 
             Symbol::Scope {
@@ -70,36 +73,43 @@ impl Symbol {
                 text_tokens,
                 start_delimeter,
                 end_delimiter,
+                braking_change_token,
             } => {
-                let mut tokens = vec![];
+                let mut tokens = Vec::new();
                 tokens.extend(start_delimeter);
                 tokens.extend(text_tokens);
-                tokens.extend(end_delimiter);
+                if let Some(end_delimiter) = end_delimiter {
+                    tokens.extend(end_delimiter);
+                }
+                if let Some(braking_token) = braking_change_token {
+                    tokens.push(braking_token);
+                }
                 return tokens;
             }
             Symbol::Body {
                 text_tokens,
-                end_delimeter: end_separator,
+                end_delimeter,
             } => {
                 let mut tokens: Vec<&Token> = Vec::new();
                 tokens.extend(text_tokens);
-                tokens.extend(end_separator);
+                if let Some(end_delimeter) = end_delimeter {
+                    tokens.extend(end_delimeter);
+                }
                 return tokens;
             }
 
             Symbol::Footer { tokens } => tokens.iter().collect(),
-            Symbol::BrakingChange { text_token } => vec![text_token],
         }
     }
-    pub fn raw_value(&self) -> String {
+    pub fn raw_value(&self) -> SlicableRcString {
         match self {
-            _ => self.get_all_tokens().iter().join(""),
+            _ => self.get_all_tokens().to_srcs(),
         }
     }
 
-    pub fn value(&self) -> String {
+    pub fn value(&self) -> SlicableRcString {
         match self {
-            _ => self.get_content_tokens().iter().join(""),
+            _ => self.get_content_tokens().to_srcs(),
         }
     }
 
@@ -120,6 +130,6 @@ impl Symbol {
     }
 
     pub fn end_i(&self) -> usize {
-        return self.get_all_tokens().last().unwrap().get_start_index();
+        return self.get_all_tokens().last().unwrap().get_end_index();
     }
 }

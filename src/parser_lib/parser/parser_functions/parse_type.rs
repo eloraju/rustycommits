@@ -8,22 +8,9 @@ pub fn parse_type(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, Syn
     let current = tokens.next();
     match current {
         Some(Token::Word(_)) => {
-            let next_token = tokens.peek();
-            match next_token {
-                Some(Token::Bang(_)) => {
-                    let bang = tokens.next().unwrap();
-                    return Ok(Symbol::Type {
-                        text_token: current.unwrap(),
-                        braking_change_token: Some(bang),
-                    });
-                }
-                _ => {
-                    return Ok(Symbol::Type {
-                        text_token: current.unwrap(),
-                        braking_change_token: None,
-                    })
-                }
-            }
+            return Ok(Symbol::Type {
+                text_token: current.unwrap(),
+            });
         }
         Some(token) => return Err(SyntaxError::UnexpectedTokenError(token)),
         None => return Err(SyntaxError::UnexpectedEndOfFileError),
@@ -35,11 +22,11 @@ mod tests {
     use itertools::Itertools;
 
     use super::*;
-    use crate::parser_lib::test_utils::TokenGenerator;
+    use crate::parser_lib::test_utils::TestTokens;
 
     #[test]
     fn should_parse_type() {
-        let mut tokens = TokenGenerator::new().word("feat").generate_iter();
+        let mut tokens = TestTokens::new().word("feat").generate_iter();
         let res = parse_type(&mut tokens);
         let symbol = res.unwrap();
         assert!(matches!(symbol, Symbol::Type { .. }));

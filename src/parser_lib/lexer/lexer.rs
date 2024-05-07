@@ -1,11 +1,13 @@
 use std::rc::Rc;
 
+use crate::parser_lib::SlicableRcString;
+
 use super::types::{Token, WordDetails};
 
 pub struct Lexer {
     tokens: Vec<Token>,
     word_length: usize,
-    message: Rc<str>,
+    message: SlicableRcString,
 }
 
 /*
@@ -24,26 +26,27 @@ impl Lexer {
         Lexer {
             tokens: Vec::new(),
             word_length: 0,
-            message: "".into(),
+            // TODO: Come up with a better way to initialize this
+            message: SlicableRcString::new(Rc::new("empty".to_string())),
         }
     }
 
-    fn process(&mut self, message: Rc<str>) -> Vec<Token> {
-        self.message = message.clone().into();
+    fn process(&mut self, message: &Rc<String>) -> Vec<Token> {
+        self.message = SlicableRcString::new(Rc::clone(message));
         for (i, c) in message.char_indices() {
             match c {
-                '!' => self.push_token(Token::Bang(i), i),
-                ':' => self.push_token(Token::Colon(i), i),
-                '#' => self.push_token(Token::Hash(i), i),
-                '\n' => self.push_token(Token::NewLine(i), i),
-                ')' => self.push_token(Token::ParenthesisClose(i), i),
-                '(' => self.push_token(Token::ParenthesisOpen(i), i),
-                ' ' => self.push_token(Token::Space(i), i),
+                '!' => self.push_token(Token::Bang(self.message.substr(i..i + 1)), i),
+                ':' => self.push_token(Token::Colon(self.message.substr(i..i + 1)), i),
+                '#' => self.push_token(Token::Hash(self.message.substr(i..i + 1)), i),
+                '\n' => self.push_token(Token::NewLine(self.message.substr(i..i + 1)), i),
+                ')' => self.push_token(Token::ParenthesisClose(self.message.substr(i..i + 1)), i),
+                '(' => self.push_token(Token::ParenthesisOpen(self.message.substr(i..i + 1)), i),
+                ' ' => self.push_token(Token::Space(self.message.substr(i..i + 1)), i),
                 _ => self.word_length += 1,
             };
         }
         if self.word_length != 0 {
-            self.push_word(self.message.len() - 1);
+            self.push_word(self.message.len());
         }
 
         let result = self.tokens.clone();
@@ -53,19 +56,15 @@ impl Lexer {
 
     fn push_token(&mut self, token: Token, index: usize) {
         if self.word_length != 0 {
-            self.push_word(index - 1);
+            self.push_word(index);
         }
         self.tokens.push(token);
     }
 
     fn push_word(&mut self, end_i: usize) {
-        let start_i = end_i - (self.word_length - 1);
-        let value: Rc<str> = self.message.get(start_i..end_i + 1).unwrap().into();
-        self.tokens.push(Token::Word(WordDetails::new(
-            value,
-            start_i,
-            self.word_length,
-        )));
+        let start_i = end_i - self.word_length;
+        let string: SlicableRcString = self.message.substr(start_i..end_i);
+        self.tokens.push(Token::Word(WordDetails::new(string)));
         self.word_length = 0;
     }
 
@@ -81,21 +80,52 @@ mod tests {
 
     #[test]
     fn should_return_word_with_correct_indecies() {
-        let message = Rc::<str>::from("test");
-        let mut lexer = Lexer::new();
-        let tokens = lexer.process(message);
-        if let Some(token) = tokens.get(0) {
-            match token {
-                Token::Word(data) => {
-                    assert_eq!(data.value(), "test".to_string());
-                    assert_eq!(data.start_index(), 0);
-                    assert_eq!(data.end_index(), 3);
-                    assert_eq!(data.len(), 4);
+        let message = Rc::new("test".to_string());
+        // closure to make all variables to out of scope -> references to message should be dropped
+        {
+            println!(
+                "refs to message before test: {:?}",
+                Rc::strong_count(&message)
+            );
+            let mut lexer = Lexer::new();
+            let tokens = lexer.process(&message);
+
+            if let Some(token) = tokens.get(0) {
+                match token {
+                    Token::Word(data) => {
+                        println!(
+                            "refs to message during test: {:?}",
+                            Rc::strong_count(&message)
+                        );
+
+                        assert_eq!(data.value(), "test".to_string());
+                        assert_eq!(data.start_index(), 0);
+                        assert_eq!(data.end_index(), 4);
+                        assert_eq!(data.len(), 4);
+                    }
+                    _ => panic!("Expected a word token"),
                 }
-                _ => panic!("Expected a word token"),
+            } else {
+                panic!("Expected a token");
             }
-        } else {
-            panic!("Expected a token");
+        }
+
+        println!(
+            "refs to message at the end of test: {:?}",
+            Rc::strong_count(&message)
+        );
+    }
+
+    #[test]
+    fn should_parse_simple_string() {
+        let message = Rc::new("This is a string: with some (stuff)\n".to_string());
+        {
+            let mut lexer = Lexer::new();
+            let tokens = lexer.process(&message);
+            for token in tokens {
+                println!("{:#?}", token);
+            }
+            assert!(true)
         }
     }
 }

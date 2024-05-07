@@ -1,59 +1,76 @@
 use std::vec::IntoIter;
 
-use itertools::MultiPeek;
+use itertools::{Itertools, MultiPeek};
 
 use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
 
-pub fn parse_body(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Symbol>, SyntaxError> {
-    let mut text_tokens: Vec<Token> = Vec::new();
-    let mut end_delimeter: Vec<Token> = Vec::new();
-    while let Some(token) = tokens.peek() {
-        match token {
-            Token::NewLine(_) => {
-                end_delimeter.push(tokens.next().unwrap());
-                let second_newline = tokens.peek();
-                match second_newline {
-                    Some(Token::NewLine(_)) => {
-                        end_delimeter.push(tokens.next().unwrap());
-                        return Ok(Some(Symbol::Body {
-                            text_tokens,
-                            end_delimeter,
-                        }));
-                    }
-                    Some(token) => {
-                        return Err(SyntaxError::UnexpectedTokenError(token.clone()));
-                    }
-                    None => {
-                        return Ok(Some(Symbol::Body {
-                            text_tokens,
-                            end_delimeter,
-                        }));
-                    }
+fn take_words(
+    tokens: &mut MultiPeek<IntoIter<Token>>,
+    buffer: Option<Vec<Token>>,
+) -> Result<Vec<Token>, SyntaxError> {
+    let mut text_tokens = buffer.unwrap_or(Vec::new());
+    text_tokens.extend(
+        tokens
+            .take_while_ref(|token| {
+                dbg!(token);
+                match token {
+                    Token::NewLine(_) => false,
+                    _ => true,
                 }
-            }
-            _ => {
-                text_tokens.push(tokens.next().unwrap());
-            }
-        }
-    }
-    if text_tokens.len() > 0 {
-        return Ok(Some(Symbol::Body {
-            text_tokens,
-            end_delimeter,
-        }));
-    }
+            })
+            .collect_vec(),
+    );
 
-    return Ok(None);
+    match tokens.peek() {
+        Some(Token::NewLine(_)) => match tokens.peek() {
+            Some(Token::NewLine(_)) => return Ok(text_tokens),
+            Some(_) => return take_words(tokens, Some(text_tokens)),
+            None => Ok(text_tokens),
+        },
+        Some(_) => return take_words(tokens, Some(text_tokens)),
+        None => Ok(text_tokens),
+    }
+}
+
+fn check_end_delimeter(
+    tokens: &mut MultiPeek<IntoIter<Token>>,
+) -> Result<Option<Vec<Token>>, SyntaxError> {
+    let mut end_delimeter: Vec<Token> = Vec::new();
+    let current = tokens.next();
+    let next = tokens.peek();
+    match (&current, next) {
+        (Some(Token::NewLine(_)), Some(Token::NewLine(_))) => {
+            end_delimeter.push(current.unwrap());
+            end_delimeter.push(tokens.next().unwrap());
+            Ok(Some(end_delimeter))
+        }
+        (Some(Token::NewLine(_)), None) => {
+            end_delimeter.push(current.unwrap());
+            Ok(Some(end_delimeter))
+        }
+        (None, _) => Ok(None),
+        (Some(token), _) => Err(SyntaxError::UnexpectedTokenError(token.clone())),
+    }
+}
+
+pub fn parse_body(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Symbol>, SyntaxError> {
+    let text_tokens = take_words(tokens, None)?;
+    let end_delimeter = check_end_delimeter(tokens)?;
+
+    return Ok(Some(Symbol::Body {
+        text_tokens,
+        end_delimeter,
+    }));
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser_lib::test_utils::TokenGenerator;
+    use crate::parser_lib::test_utils::TestTokens;
 
     #[test]
     fn should_parse_body() {
-        let mut tokens = TokenGenerator::new()
+        let mut tokens = TestTokens::new()
             .word("this")
             .space()
             .word("is")
@@ -73,7 +90,7 @@ mod tests {
                 end_delimeter: end_separator,
             } => {
                 assert_eq!(text_tokens.len(), 7);
-                assert_eq!(end_separator.len(), 2);
+                assert_eq!(end_separator.as_ref().unwrap().len(), 2);
                 assert_eq!(symbol.raw_value(), "this is a body\n\n");
                 assert_eq!(symbol.value(), "this is a body");
             }
