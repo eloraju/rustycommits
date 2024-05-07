@@ -127,38 +127,30 @@ impl Token {
 
 impl Debug for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            _ => {
-                if f.alternate() {
-                    write!(
-                        f,
-                        "Token::{} {{string: \"{}\"}}",
-                        self.get_variant_name(),
-                        self.get_value()
-                    )
-                } else {
-                    write!(f, "Token::{}", self.get_variant_name())
-                }
-            }
+        if f.alternate() {
+            write!(
+                f,
+                "Token::{} {{string: \"{}\"}}",
+                self.get_variant_name(),
+                self.get_value()
+            )
+        } else {
+            write!(f, "Token::{}", self.get_variant_name())
         }
     }
 }
 
 impl Display for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            _ => {
-                if f.alternate() {
-                    write!(
-                        f,
-                        "Token::{} {{string: \"{}\"}}",
-                        self.get_variant_name(),
-                        self.get_value()
-                    )
-                } else {
-                    write!(f, "Token::{}", self.get_variant_name())
-                }
-            }
+        if f.alternate() {
+            write!(
+                f,
+                "Token::{} {{string: \"{}\"}}",
+                self.get_variant_name(),
+                self.get_value()
+            )
+        } else {
+            write!(f, "Token::{}", self.get_variant_name())
         }
     }
 }

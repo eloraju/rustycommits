@@ -1,4 +1,4 @@
-use itertools::Itertools;
+
 
 use crate::parser_lib::{lexer::types::Token, SlicableRcString};
 
@@ -12,7 +12,7 @@ impl SRcStringFromTokens for Vec<&Token> {
         let last = self.last().unwrap();
         dbg!(first, last);
         dbg!(first.get_start_index(), last.get_end_index());
-        return first.get_super_slice(first.get_start_index()..last.get_end_index());
+        first.get_super_slice(first.get_start_index()..last.get_end_index())
     }
 }
 
@@ -60,7 +60,7 @@ impl Symbol {
     pub fn get_all_tokens(&self) -> Vec<&Token> {
         match self {
             Symbol::Type { text_token } => {
-                return vec![text_token];
+                vec![text_token]
             }
 
             Symbol::Scope {
@@ -84,7 +84,7 @@ impl Symbol {
                 if let Some(braking_token) = braking_change_token {
                     tokens.push(braking_token);
                 }
-                return tokens;
+                tokens
             }
             Symbol::Body {
                 text_tokens,
@@ -95,22 +95,18 @@ impl Symbol {
                 if let Some(end_delimeter) = end_delimeter {
                     tokens.extend(end_delimeter);
                 }
-                return tokens;
+                tokens
             }
 
             Symbol::Footer { tokens } => tokens.iter().collect(),
         }
     }
     pub fn raw_value(&self) -> SlicableRcString {
-        match self {
-            _ => self.get_all_tokens().to_srcs(),
-        }
+        self.get_all_tokens().to_srcs()
     }
 
     pub fn value(&self) -> SlicableRcString {
-        match self {
-            _ => self.get_content_tokens().to_srcs(),
-        }
+        self.get_content_tokens().to_srcs()
     }
 
     pub fn content_length(&self) -> usize {

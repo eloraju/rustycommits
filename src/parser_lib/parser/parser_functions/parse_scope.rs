@@ -11,7 +11,7 @@ fn check_start_delimiter(
     match current {
         Some(Token::ParenthesisOpen(_)) => Ok(tokens.next()),
         Some(Token::Colon(_)) => Ok(None),
-        Some(token) => Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap())),
+        Some(_token) => Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap())),
         None => Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
@@ -43,11 +43,11 @@ pub fn parse_scope(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Sym
 
     let word = take_word(tokens)?;
     let end_delimiter = check_end_delimiter(tokens)?;
-    return Ok(Some(Symbol::Scope {
+    Ok(Some(Symbol::Scope {
         text_token: word,
         start_delimeter: start_delimiter.unwrap(),
         end_delimeter: end_delimiter,
-    }));
+    }))
 }
 
 #[cfg(test)]

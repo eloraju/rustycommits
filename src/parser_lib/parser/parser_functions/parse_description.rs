@@ -76,12 +76,12 @@ pub fn parse_description(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symb
     let text_tokens = take_words(tokens)?;
     let end_delimiter = check_end_delimiter(tokens)?;
 
-    return Ok(Symbol::Description {
-        start_delimeter: start_delimeter,
-        text_tokens: text_tokens,
-        end_delimiter: end_delimiter,
-        braking_change_token: braking_change_token,
-    });
+    Ok(Symbol::Description {
+        start_delimeter,
+        text_tokens,
+        end_delimiter,
+        braking_change_token,
+    })
 }
 
 #[cfg(test)]

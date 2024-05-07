@@ -14,10 +14,10 @@ pub fn process(tokens: Vec<Token>) -> Result<CommitMessage, SyntaxError> {
     let description = parse_description(&mut tokens_iter)?;
     let body = parse_body(&mut tokens_iter)?;
 
-    return Ok(CommitMessage {
+    Ok(CommitMessage {
         commit_type: Some(commit_type),
         scope,
         description: Some(description),
         body,
-    });
+    })
 }

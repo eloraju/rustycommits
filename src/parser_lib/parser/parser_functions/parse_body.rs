@@ -8,7 +8,7 @@ fn take_words(
     tokens: &mut MultiPeek<IntoIter<Token>>,
     buffer: Option<Vec<Token>>,
 ) -> Result<Vec<Token>, SyntaxError> {
-    let mut text_tokens = buffer.unwrap_or(Vec::new());
+    let mut text_tokens = buffer.unwrap_or_default();
     text_tokens.extend(
         tokens
             .take_while_ref(|token| {
@@ -23,11 +23,11 @@ fn take_words(
 
     match tokens.peek() {
         Some(Token::NewLine(_)) => match tokens.peek() {
-            Some(Token::NewLine(_)) => return Ok(text_tokens),
-            Some(_) => return take_words(tokens, Some(text_tokens)),
+            Some(Token::NewLine(_)) => Ok(text_tokens),
+            Some(_) => take_words(tokens, Some(text_tokens)),
             None => Ok(text_tokens),
         },
-        Some(_) => return take_words(tokens, Some(text_tokens)),
+        Some(_) => take_words(tokens, Some(text_tokens)),
         None => Ok(text_tokens),
     }
 }
@@ -57,10 +57,10 @@ pub fn parse_body(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Symb
     let text_tokens = take_words(tokens, None)?;
     let end_delimeter = check_end_delimeter(tokens)?;
 
-    return Ok(Some(Symbol::Body {
+    Ok(Some(Symbol::Body {
         text_tokens,
         end_delimeter,
-    }));
+    }))
 }
 
 #[cfg(test)]

@@ -8,12 +8,12 @@ pub fn parse_type(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, Syn
     let current = tokens.next();
     match current {
         Some(Token::Word(_)) => {
-            return Ok(Symbol::Type {
+            Ok(Symbol::Type {
                 text_token: current.unwrap(),
-            });
+            })
         }
-        Some(token) => return Err(SyntaxError::UnexpectedTokenError(token)),
-        None => return Err(SyntaxError::UnexpectedEndOfFileError),
+        Some(token) => Err(SyntaxError::UnexpectedTokenError(token)),
+        None => Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
 

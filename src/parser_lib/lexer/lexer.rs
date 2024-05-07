@@ -51,7 +51,7 @@ impl Lexer {
 
         let result = self.tokens.clone();
         self.reset();
-        return result;
+        result
     }
 
     fn push_token(&mut self, token: Token, index: usize) {
