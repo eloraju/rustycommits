@@ -1,5 +1,5 @@
 mod parser;
-pub mod parser_functions;
+mod parser_functions;
 pub mod types;
 
-pub use self::parser::Parser;
+pub use self::parser::process;

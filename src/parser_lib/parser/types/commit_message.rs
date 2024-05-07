@@ -2,9 +2,9 @@ use super::Symbol;
 
 #[derive(Debug, Default)]
 pub struct CommitMessage {
-    commit_type: Option<Symbol>,
-    scope: Option<Symbol>,
-    description: Option<Symbol>,
-    body: Option<Symbol>,
-    footer: Option<Symbol>,
+    pub commit_type: Option<Symbol>,
+    pub scope: Option<Symbol>,
+    pub description: Option<Symbol>,
+    pub body: Option<Symbol>,
+    //pub footer: Option<Symbol>,
 }

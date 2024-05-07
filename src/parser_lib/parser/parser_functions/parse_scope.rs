@@ -4,11 +4,14 @@ use itertools::MultiPeek;
 
 use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
 
-fn check_start_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token, SyntaxError> {
-    let current = tokens.next();
+fn check_start_delimiter(
+    tokens: &mut MultiPeek<IntoIter<Token>>,
+) -> Result<Option<Token>, SyntaxError> {
+    let current = tokens.peek();
     match current {
-        Some(Token::ParenthesisOpen(_)) => Ok(current.unwrap()),
-        Some(token) => Err(SyntaxError::UnexpectedTokenError(token)),
+        Some(Token::ParenthesisOpen(_)) => Ok(tokens.next()),
+        Some(Token::Colon(_)) => Ok(None),
+        Some(token) => Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap())),
         None => Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
@@ -31,15 +34,20 @@ fn check_end_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token,
     }
 }
 
-pub fn parse_scope(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, SyntaxError> {
+pub fn parse_scope(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Symbol>, SyntaxError> {
     let start_delimiter = check_start_delimiter(tokens)?;
+
+    if start_delimiter.is_none() {
+        return Ok(None);
+    }
+
     let word = take_word(tokens)?;
     let end_delimiter = check_end_delimiter(tokens)?;
-    return Ok(Symbol::Scope {
+    return Ok(Some(Symbol::Scope {
         text_token: word,
-        start_delimeter: start_delimiter,
+        start_delimeter: start_delimiter.unwrap(),
         end_delimeter: end_delimiter,
-    });
+    }));
 }
 
 #[cfg(test)]
@@ -57,7 +65,7 @@ mod tests {
             .parenthesis_close()
             .generate_iter();
         let res = parse_scope(&mut tokens);
-        let symbol = res.unwrap();
+        let symbol = res.unwrap().unwrap();
         assert!(matches!(symbol, Symbol::Scope { .. }));
         assert_eq!(symbol.content_length(), 5);
         assert_eq!(symbol.total_length(), 7);
