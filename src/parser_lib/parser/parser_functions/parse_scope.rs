@@ -11,7 +11,10 @@ fn check_start_delimiter(
     match current {
         Some(Token::ParenthesisOpen(_)) => Ok(tokens.next()),
         Some(Token::Colon(_)) => Ok(None),
-        Some(_token) => Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap())),
+        Some(_token) => Err(SyntaxError::UnexpectedTokenError(
+            tokens.next().unwrap(),
+            "'(' or ':'".to_string(),
+        )),
         None => Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
@@ -20,7 +23,7 @@ fn take_word(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token, SyntaxErr
     let current = tokens.next();
     match current {
         Some(Token::Word(_)) => Ok(current.unwrap()),
-        Some(token) => Err(SyntaxError::UnexpectedTokenError(token)),
+        Some(token) => Err(SyntaxError::expected_string(token)),
         None => Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
@@ -29,7 +32,7 @@ fn check_end_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token,
     let current = tokens.next();
     match current {
         Some(Token::ParenthesisClose(_)) => Ok(current.unwrap()),
-        Some(token) => Err(SyntaxError::UnexpectedTokenError(token)),
+        Some(token) => Err(SyntaxError::expected_parent_close(token)),
         None => Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }

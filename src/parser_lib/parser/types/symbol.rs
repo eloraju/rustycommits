@@ -34,7 +34,7 @@ pub enum Symbol {
     },
     Description {
         text_tokens: Vec<Token>,
-        start_delimeter: Vec<Token>,
+        start_delimeter: Token,
         end_delimiter: Option<Vec<Token>>,
         braking_change_token: Option<Token>,
     },
@@ -86,7 +86,7 @@ impl Symbol {
                 braking_change_token,
             } => {
                 let mut tokens = Vec::new();
-                tokens.extend(start_delimeter);
+                tokens.push(start_delimeter);
                 tokens.extend(text_tokens);
                 if let Some(end_delimiter) = end_delimiter {
                     tokens.extend(end_delimiter);

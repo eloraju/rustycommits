@@ -13,28 +13,28 @@ fn check_bang(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Token>, 
     }
 }
 
-fn check_start_delimiter(
-    tokens: &mut MultiPeek<IntoIter<Token>>,
-) -> Result<Vec<Token>, SyntaxError> {
+fn check_start_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token, SyntaxError> {
     let current = tokens.next();
-    let next = tokens.peek();
-    match (&current, next) {
-        (Some(Token::Colon(_)), Some(Token::Space(_))) => {
-            Ok(vec![current.unwrap(), tokens.next().unwrap()])
-        }
-        (Some(Token::Colon(_)), Some(_)) => {
-            Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap()))
-        }
-        (Some(_), _) => Err(SyntaxError::UnexpectedTokenError(current.unwrap())),
-        (None, _) => Err(SyntaxError::UnexpectedEndOfFileError),
+    match current {
+        Some(Token::ColonSpace(_)) => Ok(current.unwrap()),
+        Some(token) => match token {
+            Token::Colon(_) => Err(SyntaxError::expected_space(token)),
+            _ => Err(SyntaxError::expected_colon(token)),
+        },
+        None => Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
 
 fn take_words(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Vec<Token>, SyntaxError> {
     let next = tokens.peek();
     match next {
-        Some(Token::Word(_)) => {}
-        Some(_) => return Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap())),
+        Some(Token::NewLine(_)) => {
+            return Err(SyntaxError::UnexpectedTokenError(
+                tokens.next().unwrap(),
+                "anything but this".to_string(),
+            ))
+        }
+        Some(_) => {}
         None => return Err(SyntaxError::UnexpectedEndOfFileError),
     };
 
@@ -64,9 +64,9 @@ fn check_end_delimiter(
         }
         (None, _) => Ok(None),
         (Some(Token::NewLine(_)), Some(_)) => {
-            Err(SyntaxError::UnexpectedTokenError(tokens.next().unwrap()))
+            Err(SyntaxError::expected_newline(tokens.next().unwrap()))
         }
-        (Some(_), _) => Err(SyntaxError::UnexpectedTokenError(current.unwrap())),
+        (Some(_), _) => Err(SyntaxError::expected_newline(current.unwrap())),
     }
 }
 

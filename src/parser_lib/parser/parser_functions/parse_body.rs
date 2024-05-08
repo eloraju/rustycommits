@@ -48,8 +48,8 @@ fn check_end_delimeter(
             end_delimeter.push(current.unwrap());
             Ok(Some(end_delimeter))
         }
+        (Some(_), _) => Err(SyntaxError::expected_newline(current.unwrap())),
         (None, _) => Ok(None),
-        (Some(token), _) => Err(SyntaxError::UnexpectedTokenError(token.clone())),
     }
 }
 

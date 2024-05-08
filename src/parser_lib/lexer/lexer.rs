@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{iter::Peekable, rc::Rc, str::CharIndices};
 
 use crate::parser_lib::SlicableRcString;
 
@@ -33,32 +33,101 @@ impl Lexer {
 
     fn process(&mut self, message: &Rc<String>) -> Vec<Token> {
         self.message = SlicableRcString::new(Rc::clone(message));
-        for (i, c) in message.char_indices() {
+        let mut char_indecies = message.char_indices().into_iter().peekable();
+        for (i, c) in char_indecies {
             match c {
-                '!' => self.push_token(Token::Bang(self.message.substr(i..i + 1)), i),
-                ':' => self.push_token(Token::Colon(self.message.substr(i..i + 1)), i),
-                '#' => self.push_token(Token::Hash(self.message.substr(i..i + 1)), i),
-                '\n' => self.push_token(Token::NewLine(self.message.substr(i..i + 1)), i),
-                ')' => self.push_token(Token::ParenthesisClose(self.message.substr(i..i + 1)), i),
-                '(' => self.push_token(Token::ParenthesisOpen(self.message.substr(i..i + 1)), i),
-                ' ' => self.push_token(Token::Space(self.message.substr(i..i + 1)), i),
+                '!' => self.push_bang(i),
+                ':' => self.push_colon(i),
+                '#' => self.push_hash(i),
+                '\n' => self.handle_newline(i),
+                ')' => self.push_parenthesis_close(i),
+                '(' => self.push_parenthesis_open(i),
+                ' ' => self.handle_space(i),
                 _ => self.word_length += 1,
             };
         }
-        if self.word_length != 0 {
-            self.push_word(self.message.len());
-        }
+
+        self.push_if_word(self.message.len());
 
         let result = self.tokens.clone();
         self.reset();
         result
     }
 
+    fn push_colon(&mut self, index: usize) {
+        self.push_if_word(index);
+        self.push_token(Token::Colon(self.message.substr(index..index + 1)), index)
+    }
+
+    fn handle_newline(&mut self, index: usize) {
+        self.push_if_word(index);
+        let previous_token = self.tokens.pop();
+        match &previous_token {
+            Some(Token::NewLine(_)) => {
+                let prev_i = previous_token.unwrap().get_start_index();
+                self.push_token(
+                    Token::SectionSeparator(self.message.substr(prev_i..index + 1)),
+                    index,
+                );
+            }
+            Some(_) => {
+                self.tokens.push(previous_token.unwrap());
+                self.push_token(Token::NewLine(self.message.substr(index..index + 1)), index);
+            }
+            None => self.push_token(Token::NewLine(self.message.substr(index..index + 1)), index),
+        }
+    }
+
+    fn push_bang(&mut self, index: usize) {
+        self.push_token(Token::Bang(self.message.substr(index..index + 1)), index);
+    }
+
+    fn push_parenthesis_close(&mut self, index: usize) {
+        self.push_token(
+            Token::ParenthesisClose(self.message.substr(index..index + 1)),
+            index,
+        );
+    }
+
+    fn push_parenthesis_open(&mut self, index: usize) {
+        self.push_token(
+            Token::ParenthesisOpen(self.message.substr(index..index + 1)),
+            index,
+        );
+    }
+
+    fn handle_space(&mut self, index: usize) {
+        self.push_if_word(index);
+        let previous_token = self.tokens.pop();
+        match &previous_token {
+            Some(Token::Colon(_)) => {
+                let prev_i = previous_token.unwrap().get_start_index();
+                self.push_token(
+                    Token::ColonSpace(self.message.substr(prev_i..index + 1)),
+                    index,
+                );
+            }
+            Some(_) => {
+                self.tokens.push(previous_token.unwrap());
+                self.push_token(Token::Space(self.message.substr(index..index + 1)), index);
+            }
+            None => self.push_token(Token::Space(self.message.substr(index..index + 1)), index),
+        };
+    }
+
+    fn push_hash(&mut self, index: usize) {
+        self.push_token(Token::Hash(self.message.substr(index..index + 1)), index);
+    }
+
     fn push_token(&mut self, token: Token, index: usize) {
+        self.push_if_word(index);
+        self.tokens.push(token);
+    }
+
+    fn push_if_word(&mut self, index: usize) {
         if self.word_length != 0 {
             self.push_word(index);
         }
-        self.tokens.push(token);
     }
 
     fn push_word(&mut self, end_i: usize) {
@@ -103,7 +172,12 @@ mod tests {
         let message = Rc::new("feat: test".to_string());
         let mut lexer = Lexer::new();
         let tokens = lexer.process(&message);
-        assert_eq!(tokens.len(), 4);
+        assert_eq!(tokens.len(), 3);
+
+        match &tokens[1] {
+            Token::ColonSpace(d) => assert_eq!(d.value(), ": "),
+            _ => {}
+        }
     }
 
     #[test]
@@ -111,10 +185,32 @@ mod tests {
         let message = Rc::new("hello-world: #tag\nAnother-tag: Hi there".to_string());
         let mut lexer = Lexer::new();
         let tokens = lexer.process(&message);
-        assert_eq!(tokens.len(), 12);
+        assert_eq!(tokens.len(), 10);
 
         match &tokens[0] {
             Token::Word(d) => assert_eq!(d.value(), "hello-world"),
+            _ => {}
+        }
+
+        match &tokens[1] {
+            Token::ColonSpace(d) => assert_eq!(d.value(), ": "),
+            _ => {}
+        }
+        match &tokens[6] {
+            Token::ColonSpace(d) => assert_eq!(d.value(), ": "),
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn should_tokenize_section_separator() {
+        let message = Rc::new("feat test\n\n".to_string());
+        let mut lexer = Lexer::new();
+        let tokens = lexer.process(&message);
+        assert_eq!(tokens.len(), 4);
+
+        match &tokens[3] {
+            Token::SectionSeparator(d) => assert_eq!(d.value(), "\n\n"),
             _ => {}
         }
     }

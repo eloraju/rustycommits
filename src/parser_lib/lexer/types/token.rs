@@ -65,7 +65,7 @@ impl Token {
         }
     }
 
-    fn get_value(&self) -> String {
+    pub fn get_value(&self) -> String {
         match self {
             Token::Word(token_data) => token_data.value(),
             Token::Bang(value) => value.value(),
@@ -131,6 +131,21 @@ impl Token {
             Token::Space(_) => "Space".to_string(),
             Token::ColonSpace(_) => "ColonSpace".to_string(),
             Token::SectionSeparator(_) => "SectionSeparator".to_string(),
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            Token::Word(token_data) => token_data.len(),
+            Token::Bang(value) => value.len(),
+            Token::Colon(value) => value.len(),
+            Token::Hash(value) => value.len(),
+            Token::NewLine(value) => value.end_index(),
+            Token::ParenthesisClose(value) => value.len(),
+            Token::ParenthesisOpen(value) => value.len(),
+            Token::Space(value) => value.len(),
+            Token::ColonSpace(value) => value.len(),
+            Token::SectionSeparator(value) => value.len(),
         }
     }
 
