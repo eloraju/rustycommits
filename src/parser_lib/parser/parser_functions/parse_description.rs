@@ -27,20 +27,14 @@ fn check_start_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Toke
 
 fn take_words(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Vec<Token>, SyntaxError> {
     let next = tokens.peek();
-    match next {
-        Some(Token::NewLine(_)) => {
-            return Err(SyntaxError::UnexpectedTokenError(
-                tokens.next().unwrap(),
-                "anything but this".to_string(),
-            ))
-        }
-        Some(_) => {}
-        None => return Err(SyntaxError::UnexpectedEndOfFileError),
-    };
+    // Start delim check doesn't check this so we gotta make sure there's something in there
+    if next.is_none() {
+        return Err(SyntaxError::UnexpectedEndOfFileError);
+    }
 
     Ok(tokens
         .take_while_ref(|token| match token {
-            Token::NewLine(_) => false,
+            Token::SectionSeparator(_) => false,
             _ => true,
         })
         .collect_vec())
@@ -48,25 +42,16 @@ fn take_words(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Vec<Token>, Syn
 
 fn check_end_delimiter(
     tokens: &mut MultiPeek<IntoIter<Token>>,
-) -> Result<Option<Vec<Token>>, SyntaxError> {
+) -> Result<Option<Token>, SyntaxError> {
     let mut end_delimiter: Vec<Token> = Vec::new();
     let current = tokens.next();
-    let next = tokens.peek();
-    match (&current, next) {
-        (Some(Token::NewLine(_)), Some(Token::NewLine(_))) => {
-            end_delimiter.push(current.unwrap());
-            end_delimiter.push(tokens.next().unwrap());
-            Ok(Some(end_delimiter))
-        }
-        (Some(Token::NewLine(_)), None) => {
-            end_delimiter.push(current.unwrap());
-            Ok(Some(end_delimiter))
-        }
-        (None, _) => Ok(None),
-        (Some(Token::NewLine(_)), Some(_)) => {
-            Err(SyntaxError::expected_newline(tokens.next().unwrap()))
-        }
-        (Some(_), _) => Err(SyntaxError::expected_newline(current.unwrap())),
+    match &current {
+        Some(Token::SectionSeparator(_)) => Ok(Some(current.unwrap())),
+        None => Ok(None),
+        _ => Err(SyntaxError::UnexpectedTokenError(
+            current.unwrap(),
+            "'\n\n'".to_string(),
+        )),
     }
 }
 

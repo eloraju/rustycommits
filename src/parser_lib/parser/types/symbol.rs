@@ -35,7 +35,7 @@ pub enum Symbol {
     Description {
         text_tokens: Vec<Token>,
         start_delimeter: Token,
-        end_delimiter: Option<Vec<Token>>,
+        end_delimiter: Option<Token>,
         braking_change_token: Option<Token>,
     },
     Body {
@@ -89,7 +89,7 @@ impl Symbol {
                 tokens.push(start_delimeter);
                 tokens.extend(text_tokens);
                 if let Some(end_delimiter) = end_delimiter {
-                    tokens.extend(end_delimiter);
+                    tokens.push(end_delimiter);
                 }
                 if let Some(braking_token) = braking_change_token {
                     tokens.push(braking_token);
