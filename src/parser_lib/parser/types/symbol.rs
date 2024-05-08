@@ -1,5 +1,3 @@
-
-
 use crate::parser_lib::{lexer::types::Token, SlicableRcString};
 
 trait SRcStringFromTokens {
@@ -14,6 +12,12 @@ impl SRcStringFromTokens for Vec<&Token> {
         dbg!(first.get_start_index(), last.get_end_index());
         first.get_super_slice(first.get_start_index()..last.get_end_index())
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FooterData {
+    pub key: Token,
+    pub value: Token,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -39,7 +43,9 @@ pub enum Symbol {
         end_delimeter: Option<Vec<Token>>,
     },
     Footer {
-        tokens: Vec<Token>,
+        key: Token,
+        delimiter: Token,
+        value: Token,
     },
 }
 
@@ -53,7 +59,11 @@ impl Symbol {
                 text_tokens: tokens,
                 ..
             } => tokens.iter().collect(),
-            Symbol::Footer { tokens } => tokens.iter().collect(),
+            Symbol::Footer {
+                key,
+                delimiter,
+                value,
+            } => vec![key, delimiter, value],
         }
     }
 
@@ -98,7 +108,11 @@ impl Symbol {
                 tokens
             }
 
-            Symbol::Footer { tokens } => tokens.iter().collect(),
+            Symbol::Footer {
+                key,
+                delimiter,
+                value,
+            } => vec![key, delimiter, value],
         }
     }
     pub fn raw_value(&self) -> SlicableRcString {
