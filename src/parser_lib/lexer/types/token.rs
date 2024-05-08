@@ -45,10 +45,12 @@ pub enum Token {
     ParenthesisClose(SlicableRcString),
     ParenthesisOpen(SlicableRcString),
     Space(SlicableRcString),
+    ColonSpace(SlicableRcString),
+    SectionSeparator(SlicableRcString),
 }
 
 impl Token {
-    fn get_str_ref(&self) -> &SlicableRcString {
+    fn get_srcs_ref(&self) -> &SlicableRcString {
         match self {
             Token::Word(token_data) => &token_data.slicabe_rc_string,
             Token::Bang(value) => value,
@@ -58,6 +60,8 @@ impl Token {
             Token::ParenthesisClose(value) => value,
             Token::ParenthesisOpen(value) => value,
             Token::Space(value) => value,
+            Token::ColonSpace(value) => value,
+            Token::SectionSeparator(value) => value,
         }
     }
 
@@ -71,6 +75,8 @@ impl Token {
             Token::ParenthesisClose(value) => value.value(),
             Token::ParenthesisOpen(value) => value.value(),
             Token::Space(value) => value.value(),
+            Token::ColonSpace(value) => value.value(),
+            Token::SectionSeparator(value) => value.value(),
         }
     }
 
@@ -84,12 +90,16 @@ impl Token {
             Token::ParenthesisClose(value) => value.start_index(),
             Token::ParenthesisOpen(value) => value.start_index(),
             Token::Space(value) => value.start_index(),
+            Token::ColonSpace(value) => value.start_index(),
+            Token::SectionSeparator(value) => value.start_index(),
         }
     }
 
     pub fn get_length(&self) -> usize {
         match self {
             Token::Word(token_data) => token_data.len(),
+            Token::ColonSpace(value) => value.len(),
+            Token::SectionSeparator(value) => value.len(),
             _ => 1,
         }
     }
@@ -104,6 +114,8 @@ impl Token {
             Token::ParenthesisClose(value) => value.end_index(),
             Token::ParenthesisOpen(value) => value.end_index(),
             Token::Space(value) => value.end_index(),
+            Token::ColonSpace(value) => value.end_index(),
+            Token::SectionSeparator(value) => value.end_index(),
         }
     }
 
@@ -117,11 +129,13 @@ impl Token {
             Token::ParenthesisClose(_) => "ParenthesisClose".to_string(),
             Token::ParenthesisOpen(_) => "ParenthesisOpen".to_string(),
             Token::Space(_) => "Space".to_string(),
+            Token::ColonSpace(_) => "ColonSpace".to_string(),
+            Token::SectionSeparator(_) => "SectionSeparator".to_string(),
         }
     }
 
     pub fn get_super_slice(&self, span: Range<usize>) -> SlicableRcString {
-        self.get_str_ref().super_slice(span)
+        self.get_srcs_ref().super_slice(span)
     }
 }
 
