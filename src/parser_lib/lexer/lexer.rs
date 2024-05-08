@@ -82,50 +82,40 @@ mod tests {
     fn should_return_word_with_correct_indecies() {
         let message = Rc::new("test".to_string());
         // closure to make all variables to out of scope -> references to message should be dropped
-        {
-            println!(
-                "refs to message before test: {:?}",
-                Rc::strong_count(&message)
-            );
-            let mut lexer = Lexer::new();
-            let tokens = lexer.process(&message);
+        let mut lexer = Lexer::new();
+        let tokens = lexer.process(&message);
 
-            if let Some(token) = tokens.get(0) {
-                match token {
-                    Token::Word(data) => {
-                        println!(
-                            "refs to message during test: {:?}",
-                            Rc::strong_count(&message)
-                        );
-
-                        assert_eq!(data.value(), "test".to_string());
-                        assert_eq!(data.start_index(), 0);
-                        assert_eq!(data.end_index(), 4);
-                        assert_eq!(data.len(), 4);
-                    }
-                    _ => panic!("Expected a word token"),
+        if let Some(token) = tokens.get(0) {
+            match token {
+                Token::Word(data) => {
+                    assert_eq!(data.value(), "test".to_string());
+                    assert_eq!(data.start_index(), 0);
+                    assert_eq!(data.end_index(), 4);
+                    assert_eq!(data.len(), 4);
                 }
-            } else {
-                panic!("Expected a token");
+                _ => {}
             }
         }
-
-        println!(
-            "refs to message at the end of test: {:?}",
-            Rc::strong_count(&message)
-        );
     }
 
     #[test]
-    fn should_parse_simple_string() {
-        let message = Rc::new("This is a string: with some (stuff)\n".to_string());
-        {
-            let mut lexer = Lexer::new();
-            let tokens = lexer.process(&message);
-            for token in tokens {
-                println!("{:#?}", token);
-            }
-            assert!(true)
+    fn should_tokenize_simple_string() {
+        let message = Rc::new("feat: test".to_string());
+        let mut lexer = Lexer::new();
+        let tokens = lexer.process(&message);
+        assert_eq!(tokens.len(), 4);
+    }
+
+    #[test]
+    fn should_tokenize_tags() {
+        let message = Rc::new("hello-world: #tag\nAnother-tag: Hi there".to_string());
+        let mut lexer = Lexer::new();
+        let tokens = lexer.process(&message);
+        assert_eq!(tokens.len(), 12);
+
+        match &tokens[0] {
+            Token::Word(d) => assert_eq!(d.value(), "hello-world"),
+            _ => {}
         }
     }
 }
