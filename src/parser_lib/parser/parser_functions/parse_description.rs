@@ -18,7 +18,7 @@ fn check_start_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Toke
     match current {
         Some(Token::ColonSpace(_)) => Ok(current.unwrap()),
         Some(token) => match token {
-            Token::Colon(_) => Err(SyntaxError::expected_space(token)),
+            Token::Colon(_) => Err(SyntaxError::expected_space(tokens.next().unwrap())),
             _ => Err(SyntaxError::expected_colon(token)),
         },
         None => Err(SyntaxError::UnexpectedEndOfFileError),
