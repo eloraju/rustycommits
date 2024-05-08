@@ -38,7 +38,7 @@ impl Lexer {
             match c {
                 '!' => self.push_bang(i),
                 ':' => self.push_colon(i),
-                '#' => self.push_hash(i),
+                '#' => self.handle_hash(i),
                 '\n' => self.handle_newline(i),
                 ')' => self.push_parenthesis_close(i),
                 '(' => self.push_parenthesis_open(i),
@@ -115,8 +115,23 @@ impl Lexer {
         };
     }
 
-    fn push_hash(&mut self, index: usize) {
-        self.push_token(Token::Hash(self.message.substr(index..index + 1)), index);
+    fn handle_hash(&mut self, index: usize) {
+        self.push_if_word(index);
+        let previous_token = self.tokens.pop();
+        match &previous_token {
+            Some(Token::Space(_)) => {
+                let prev_i = previous_token.unwrap().get_start_index();
+                self.push_token(
+                    Token::SpaceHash(self.message.substr(prev_i..index + 1)),
+                    index,
+                );
+            }
+            Some(_) => {
+                self.tokens.push(previous_token.unwrap());
+                self.push_token(Token::Hash(self.message.substr(index..index + 1)), index);
+            }
+            None => self.push_token(Token::Hash(self.message.substr(index..index + 1)), index),
+        };
     }
 
     fn push_token(&mut self, token: Token, index: usize) {
@@ -213,5 +228,14 @@ mod tests {
             Token::SectionSeparator(d) => assert_eq!(d.value(), "\n\n"),
             _ => {}
         }
+    }
+
+    #[test]
+    fn should_tokenize_space_hash() {
+        let msg = Rc::new("fix #12".to_string());
+        let mut lexer = Lexer::new();
+        let tokens = lexer.process(&msg);
+        assert_eq!(tokens.len(), 3);
+        assert_eq!(tokens[1].get_value(), " #");
     }
 }

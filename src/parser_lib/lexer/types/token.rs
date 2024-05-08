@@ -46,6 +46,7 @@ pub enum Token {
     ParenthesisOpen(SlicableRcString),
     Space(SlicableRcString),
     ColonSpace(SlicableRcString),
+    SpaceHash(SlicableRcString),
     SectionSeparator(SlicableRcString),
 }
 
@@ -61,6 +62,7 @@ impl Token {
             Token::ParenthesisOpen(value) => value,
             Token::Space(value) => value,
             Token::ColonSpace(value) => value,
+            Token::SpaceHash(value) => value,
             Token::SectionSeparator(value) => value,
         }
     }
@@ -77,6 +79,7 @@ impl Token {
             Token::Space(value) => value.value(),
             Token::ColonSpace(value) => value.value(),
             Token::SectionSeparator(value) => value.value(),
+            Token::SpaceHash(value) => value.value(),
         }
     }
 
@@ -92,6 +95,7 @@ impl Token {
             Token::Space(value) => value.start_index(),
             Token::ColonSpace(value) => value.start_index(),
             Token::SectionSeparator(value) => value.start_index(),
+            Token::SpaceHash(value) => value.start_index(),
         }
     }
 
@@ -100,6 +104,7 @@ impl Token {
             Token::Word(token_data) => token_data.len(),
             Token::ColonSpace(value) => value.len(),
             Token::SectionSeparator(value) => value.len(),
+            Token::SpaceHash(value) => value.len(),
             _ => 1,
         }
     }
@@ -116,6 +121,7 @@ impl Token {
             Token::Space(value) => value.end_index(),
             Token::ColonSpace(value) => value.end_index(),
             Token::SectionSeparator(value) => value.end_index(),
+            Token::SpaceHash(value) => value.end_index(),
         }
     }
 
@@ -131,6 +137,7 @@ impl Token {
             Token::Space(_) => "Space".to_string(),
             Token::ColonSpace(_) => "ColonSpace".to_string(),
             Token::SectionSeparator(_) => "SectionSeparator".to_string(),
+            Token::SpaceHash(_) => "SpaceHash".to_string(),
         }
     }
 
@@ -146,6 +153,7 @@ impl Token {
             Token::Space(value) => value.len(),
             Token::ColonSpace(value) => value.len(),
             Token::SectionSeparator(value) => value.len(),
+            Token::SpaceHash(value) => value.len(),
         }
     }
 
