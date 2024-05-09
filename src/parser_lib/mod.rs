@@ -23,6 +23,8 @@ pub mod test_utils {
         NewLine(usize),
         ParenthesisOpen(usize),
         ParenthesisClose(usize),
+        ColonSpace(usize),
+        SpaceHash(usize),
     }
     pub struct TestTokens {
         test_token_buf: Vec<TokenType>,
@@ -58,10 +60,26 @@ pub mod test_utils {
             return self;
         }
 
+        pub fn space_hash(&mut self) -> &mut Self {
+            self.test_token_buf
+                .push(TokenType::SpaceHash(self.next_index()));
+            self.string.push(' ');
+            self.string.push('#');
+            return self;
+        }
+
         pub fn colon(&mut self) -> &mut Self {
             self.test_token_buf
                 .push(TokenType::Colon(self.next_index()));
             self.string.push(':');
+            return self;
+        }
+
+        pub fn colon_space(&mut self) -> &mut Self {
+            self.test_token_buf
+                .push(TokenType::ColonSpace(self.next_index()));
+            self.string.push(':');
+            self.string.push(' ');
             return self;
         }
 
@@ -110,6 +128,12 @@ pub mod test_utils {
                     )),
                     TokenType::ParenthesisOpen(index) => tokens.push(Token::ParenthesisOpen(
                         slicable_rc_string.substr(*index..*index + 1),
+                    )),
+                    TokenType::ColonSpace(index) => tokens.push(Token::ColonSpace(
+                        slicable_rc_string.substr(*index..*index + 2),
+                    )),
+                    TokenType::SpaceHash(index) => tokens.push(Token::SpaceHash(
+                        slicable_rc_string.substr(*index..*index + 2),
                     )),
                 }
             }

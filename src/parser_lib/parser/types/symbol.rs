@@ -8,8 +8,6 @@ impl SRcStringFromTokens for Vec<&Token> {
     fn to_srcs(&self) -> SlicableRcString {
         let first = self.first().unwrap();
         let last = self.last().unwrap();
-        dbg!(first, last);
-        dbg!(first.get_start_index(), last.get_end_index());
         first.get_super_slice(first.get_start_index()..last.get_end_index())
     }
 }
@@ -45,7 +43,7 @@ pub enum Symbol {
     Footer {
         key: Token,
         delimiter: Token,
-        value: Token,
+        text_tokens: Vec<Token>,
     },
 }
 
@@ -62,8 +60,14 @@ impl Symbol {
             Symbol::Footer {
                 key,
                 delimiter,
-                value,
-            } => vec![key, delimiter, value],
+                text_tokens: value,
+            } => {
+                let mut tokens: Vec<&Token> = Vec::new();
+                tokens.push(key);
+                tokens.push(delimiter);
+                tokens.extend(value);
+                return tokens;
+            }
         }
     }
 
@@ -111,8 +115,14 @@ impl Symbol {
             Symbol::Footer {
                 key,
                 delimiter,
-                value,
-            } => vec![key, delimiter, value],
+                text_tokens: value,
+            } => {
+                let mut tokens: Vec<&Token> = Vec::new();
+                tokens.push(key);
+                tokens.push(delimiter);
+                tokens.extend(value);
+                return tokens;
+            }
         }
     }
     pub fn raw_value(&self) -> SlicableRcString {

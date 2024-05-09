@@ -38,6 +38,9 @@ impl Lexer {
             match c {
                 '!' => self.push_bang(i),
                 ':' => self.push_colon(i),
+                // TODO: Come up with a better way to do these handle_x functions
+                // currently we're checking the last token pushed to see if we need to merge...
+                // Peeking would be a better option but haven't yet had the time to look into it
                 '#' => self.handle_hash(i),
                 '\n' => self.handle_newline(i),
                 ')' => self.push_parenthesis_close(i),
