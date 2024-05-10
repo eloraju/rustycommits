@@ -67,7 +67,7 @@ impl Token {
             Token::Bang(value) => value.value(),
             Token::Colon(value) => value.value(),
             Token::Hash(value) => value.value(),
-            Token::Newline(_) => "\\n".to_string(),
+            Token::Newline(value) => value.value(),
             Token::ParenthesisClose(value) => value.value(),
             Token::ParenthesisOpen(value) => value.value(),
             Token::Space(value) => value.value(),

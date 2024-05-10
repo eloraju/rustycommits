@@ -39,10 +39,15 @@ impl SyntaxError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser_lib::test_utils::TestTokens;
+    use crate::parser_lib::test_utils::TestTokenBuilder;
     #[test]
     fn should_parse_error_correctly() {
-        let token = TestTokens::new().word("test").generate().pop().unwrap();
+        let token = TestTokenBuilder::new()
+            .word("test")
+            .generate_vec()
+            .0
+            .pop()
+            .unwrap();
         let error = SyntaxError::UnexpectedTokenError(token, "':'".to_string());
         assert_eq!(
             error.to_string(),
@@ -52,11 +57,11 @@ mod tests {
 
     #[test]
     fn should_parse_error_index_correctly() {
-        let token = TestTokens::new()
+        let (token, _) = TestTokenBuilder::new()
             .word("test")
             .colon()
             .word("value")
-            .generate();
+            .generate_vec();
         let error = SyntaxError::UnexpectedTokenError(token[2].clone(), "a space".to_string());
         assert_eq!(
             error.to_string(),
@@ -66,7 +71,7 @@ mod tests {
 
     #[test]
     fn should_display_newline_char_correctly() {
-        let token = TestTokens::new().word("test").generate();
+        let (token, _) = TestTokenBuilder::new().word("test").generate_vec();
         let error = SyntaxError::UnexpectedTokenError(token[0].clone(), "'\n'".to_string());
         assert_eq!(
             error.to_string(),

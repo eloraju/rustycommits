@@ -39,7 +39,6 @@ fn recurse_footers(tokens: &mut TokenIter) -> Result<Option<Vec<Symbol>>, Syntax
             let mut footers: Vec<Symbol> = Vec::new();
             footers.push(footer);
 
-            tokens.reset_peek();
             if has_footer_start(tokens)? {
                 if let Some(next_footer) = recurse_footers(tokens)? {
                     footers.extend(next_footer);
@@ -51,32 +50,32 @@ fn recurse_footers(tokens: &mut TokenIter) -> Result<Option<Vec<Symbol>>, Syntax
     }
 }
 
-pub fn parse_footer(tokens: &mut TokenIter) -> Result<Option<Vec<Symbol>>, SyntaxError> {
+pub fn parse_footers(tokens: &mut TokenIter) -> Result<Option<Vec<Symbol>>, SyntaxError> {
     return Ok(recurse_footers(tokens)?);
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::parser_lib::test_utils::TestTokens;
+    use crate::parser_lib::test_utils::TestTokenBuilder;
 
     use super::*;
 
     #[test]
     fn should_parse_single_footer() {
-        let mut tokens = TestTokens::new()
+        let (mut tokens, _) = TestTokenBuilder::new()
             .word("footer")
             .colon()
             .space()
             .word("this")
             .generate_iter();
-        let symbol = parse_footer(&mut tokens).unwrap().unwrap().pop().unwrap();
+        let symbol = parse_footers(&mut tokens).unwrap().unwrap().pop().unwrap();
         assert!(matches!(symbol, Symbol::Footer { .. }));
-        assert_eq!(symbol.value(), "footer: this");
+        assert_eq!(symbol.no_delims_string(), "footer: this");
     }
 
     #[test]
     fn should_parse_multiple_footers() {
-        let mut tokens = TestTokens::new()
+        let (mut tokens, _) = TestTokenBuilder::new()
             .word("footer")
             .colon()
             .space()
@@ -87,11 +86,11 @@ mod tests {
             .hash()
             .word("12")
             .generate_iter();
-        let symbols = parse_footer(&mut tokens).unwrap().unwrap();
+        let symbols = parse_footers(&mut tokens).unwrap().unwrap();
         assert_eq!(symbols.len(), 2);
         assert!(matches!(symbols[0], Symbol::Footer { .. }));
         assert!(matches!(symbols[1], Symbol::Footer { .. }));
-        assert_eq!(symbols[0].value(), "footer: this\n");
-        assert_eq!(symbols[1].value(), "another-footer #12");
+        assert_eq!(symbols[0].no_delims_string(), "footer: this\n");
+        assert_eq!(symbols[1].no_delims_string(), "another-footer #12");
     }
 }

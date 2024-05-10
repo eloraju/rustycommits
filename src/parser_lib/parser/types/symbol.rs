@@ -22,7 +22,7 @@ pub struct FooterData {
 pub enum Symbol {
     // Use named fields instead of a tuple to make adding stuff later easier
     // e.g. word casing and delimiters
-    Type {
+    Topic {
         text_token: Token,
     },
     Scope {
@@ -49,7 +49,7 @@ pub enum Symbol {
 impl Symbol {
     pub fn get_content_tokens(&self) -> Vec<&Token> {
         match self {
-            Symbol::Type { text_token, .. } => vec![text_token],
+            Symbol::Topic { text_token, .. } => vec![text_token],
             Symbol::Scope { text_token, .. } => vec![text_token],
             Symbol::Description { text_tokens, .. } => text_tokens.iter().collect(),
             Symbol::Body {
@@ -67,7 +67,7 @@ impl Symbol {
 
     pub fn get_all_tokens(&self) -> Vec<&Token> {
         match self {
-            Symbol::Type { text_token } => {
+            Symbol::Topic { text_token } => {
                 vec![text_token]
             }
 
@@ -111,11 +111,11 @@ impl Symbol {
             }
         }
     }
-    pub fn raw_value(&self) -> String {
+    pub fn full_string(&self) -> String {
         self.get_all_tokens().to_srcs().to_string()
     }
 
-    pub fn value(&self) -> String {
+    pub fn no_delims_string(&self) -> String {
         self.get_content_tokens().to_srcs().to_string()
     }
 

@@ -64,12 +64,12 @@ pub fn parse_description(tokens: &mut TokenIter) -> Result<Symbol, SyntaxError> 
 mod tests {
     use itertools::Itertools;
 
-    use crate::parser_lib::{parser::types::Symbol, test_utils::TestTokens};
+    use crate::parser_lib::{parser::types::Symbol, test_utils::TestTokenBuilder};
 
     use super::parse_description;
     #[test]
     fn should_parse_description() {
-        let mut tokens = TestTokens::new()
+        let (mut tokens, _) = TestTokenBuilder::new()
             .colon()
             .space()
             .word("description")
@@ -79,7 +79,7 @@ mod tests {
             .word("this")
             .newline()
             .newline()
-            .generate();
+            .generate_vec();
         dbg!(&tokens);
         let res = parse_description(&mut tokens.into_iter().multipeek());
         let symbol = res.unwrap();
@@ -91,10 +91,19 @@ mod tests {
             } => {
                 assert_eq!(start_delimeter.len(), 2);
                 assert_eq!(text_tokens.len(), 5);
-                assert_eq!(symbol.raw_value(), ": description is this");
-                assert_eq!(symbol.value(), "description is this");
+                assert_eq!(symbol.full_string(), ": description is this");
+                assert_eq!(symbol.no_delims_string(), "description is this");
             }
             _ => panic!("Error: {:?}", symbol),
         }
+    }
+
+    #[test]
+    fn should_parse_description_with_bang() {
+        let (mut tokens, expected) = TestTokenBuilder::new()
+            .description_with_bang("description is this")
+            .generate_iter();
+        let res = parse_description(&mut tokens);
+        let symbol = res.unwrap();
     }
 }

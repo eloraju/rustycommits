@@ -5,6 +5,7 @@ use itertools::{Itertools, MultiPeek};
 use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::TokenIter};
 
 pub fn has_footer_start(orig: &mut TokenIter) -> Result<bool, SyntaxError> {
+    orig.reset_peek();
     let mut tokens = orig.clone();
     let t0 = tokens.next();
     let t1 = tokens.next();

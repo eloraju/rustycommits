@@ -8,7 +8,7 @@ use itertools::MultiPeek;
 
 use crate::parser_lib::lexer::types::Token;
 
-pub use self::commit_message::CommitMessage;
+pub use self::commit_message::{CommitMessage, CommitMessageStr};
 pub use self::symbol::Symbol;
 
 pub type TokenIter = MultiPeek<IntoIter<Token>>;

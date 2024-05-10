@@ -57,12 +57,12 @@ pub fn parse_scope(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError
 mod tests {
     use crate::parser_lib::{
         parser::{parser_functions::parse_scope, types::Symbol},
-        test_utils::TestTokens,
+        test_utils::TestTokenBuilder,
     };
 
     #[test]
     fn should_parse_scope_with_word() {
-        let mut tokens = TestTokens::new()
+        let (mut tokens, _) = TestTokenBuilder::new()
             .parenthesis_open()
             .word("scope")
             .parenthesis_close()
@@ -72,7 +72,7 @@ mod tests {
         assert!(matches!(symbol, Symbol::Scope { .. }));
         assert_eq!(symbol.content_length(), 5);
         assert_eq!(symbol.total_length(), 7);
-        assert_eq!(symbol.raw_value(), "(scope)");
-        assert_eq!(symbol.value(), "scope");
+        assert_eq!(symbol.full_string(), "(scope)");
+        assert_eq!(symbol.no_delims_string(), "scope");
     }
 }
