@@ -1,3 +1,4 @@
+#[cfg(test)]
 use std::rc::Rc;
 
 use itertools::Itertools;
@@ -42,12 +43,14 @@ pub struct ExpectedStrings {
     pub footers: Option<Vec<String>>,
 }
 
+#[allow(dead_code)]
 pub struct TestTokenBodyBuilder {
     test_token_buf: Vec<TokenType>,
     string: String,
 }
 
 impl TestTokenBodyBuilder {
+    #[allow(dead_code)]
     pub fn new() -> TestTokenBodyBuilder {
         TestTokenBodyBuilder {
             test_token_buf: Vec::new(),
@@ -238,14 +241,14 @@ impl TestTokenBuilder {
 
     pub fn multi_line_footer(
         &mut self,
-        builderFn: fn(builder: &mut TestTokenBuilder) -> &mut TestTokenBuilder,
+        builder_fn: fn(builder: &mut TestTokenBuilder) -> &mut TestTokenBuilder,
     ) -> &mut Self {
         if self.footers.is_none() {
             self.footers = Some(Vec::new());
         }
 
         let mut footer_builder = self.body_builder();
-        builderFn(&mut footer_builder);
+        builder_fn(&mut footer_builder);
         self.test_token_buf.extend(footer_builder.get_token_buf());
         let footer = footer_builder.string.clone().split_off(self.string.len());
         self.footers.as_mut().unwrap().push(footer);

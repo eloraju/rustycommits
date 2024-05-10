@@ -7,21 +7,24 @@ use super::{
     types::CommitMessage,
 };
 
-pub fn process(tokens: Vec<Token>) -> Result<CommitMessage, SyntaxError> {
-    let mut tokens_iter = tokens.into_iter().multipeek();
-    let commit_type = parse_topic(&mut tokens_iter)?;
-    let scope = parse_scope(&mut tokens_iter)?;
-    let description = parse_description(&mut tokens_iter)?;
-    let body = parse_body(&mut tokens_iter)?;
-    let footer = parse_footers(&mut tokens_iter)?;
+pub struct Parser {}
+impl Parser {
+    pub fn process(tokens: Vec<Token>) -> Result<CommitMessage, SyntaxError> {
+        let mut tokens_iter = tokens.into_iter().multipeek();
+        let commit_type = parse_topic(&mut tokens_iter)?;
+        let scope = parse_scope(&mut tokens_iter)?;
+        let description = parse_description(&mut tokens_iter)?;
+        let body = parse_body(&mut tokens_iter)?;
+        let footer = parse_footers(&mut tokens_iter)?;
 
-    Ok(CommitMessage {
-        topic: Some(commit_type),
-        scope,
-        description: Some(description),
-        body,
-        footers: footer,
-    })
+        Ok(CommitMessage {
+            topic: Some(commit_type),
+            scope,
+            description: Some(description),
+            body,
+            footers: footer,
+        })
+    }
 }
 
 #[cfg(test)]
@@ -29,18 +32,18 @@ mod tests {
     use super::*;
     use crate::parser_lib::{
         parser::types::Symbol,
-        test_utils::{assert_commit_message_eq_expected, ExpectedStrings, TestTokenBuilder},
+        test_utils::{assert_commit_message_eq_expected, TestTokenBuilder},
     };
 
     #[test]
     fn should_parse_simple_message() {
-        let (mut tokens, expected) = TestTokenBuilder::new()
+        let (tokens, expected) = TestTokenBuilder::new()
             .topic("feat")
             .scope("api")
             .description("added a new endpoint for users")
             .generate_vec();
 
-        let parsed = process(tokens).unwrap();
+        let parsed = Parser::process(tokens).unwrap();
         assert_eq!(matches!(parsed.topic, Some(Symbol::Topic { .. })), true);
         assert_eq!(matches!(parsed.scope, Some(Symbol::Scope { .. })), true);
         assert_eq!(
@@ -63,7 +66,7 @@ mod tests {
 
     #[test]
     fn should_parse_message_with_body_and_footer() {
-        let (mut tokens, expected) = TestTokenBuilder::new()
+        let (tokens, expected) = TestTokenBuilder::new()
             .topic("feat")
             .scope("api")
             .description("added a new endpoint for users")
@@ -75,13 +78,13 @@ mod tests {
             .colon_footer("test: this is a footer")
             .generate_vec();
 
-        let parsed = process(tokens).unwrap();
+        let parsed = Parser::process(tokens).unwrap();
         assert_commit_message_eq_expected(parsed, expected)
     }
 
     #[test]
     fn should_parse_message_with_a_lot_of_stuff() {
-        let (mut tokens, expected) = TestTokenBuilder::new()
+        let (tokens, expected) = TestTokenBuilder::new()
             .topic("feat")
             .scope("api")
             .description_with_bang("added a new endpoint for users")
@@ -105,7 +108,7 @@ mod tests {
             })
             .generate_vec();
 
-        let parsed = process(tokens).unwrap();
+        let parsed = Parser::process(tokens).unwrap();
         assert_commit_message_eq_expected(parsed, expected)
     }
 }

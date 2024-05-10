@@ -1,5 +1,3 @@
-use itertools::Itertools;
-
 use crate::parser_lib::{
     errors::SyntaxError,
     lexer::types::Token,

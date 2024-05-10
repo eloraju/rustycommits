@@ -31,9 +31,9 @@ impl Lexer {
         }
     }
 
-    fn process(&mut self, message: &Rc<String>) -> Vec<Token> {
+    pub fn process(&mut self, message: &Rc<String>) -> Vec<Token> {
         self.message = SlicableRcString::new(Rc::clone(message));
-        let mut char_indecies = message.char_indices().into_iter().peekable();
+        let char_indecies = message.char_indices().into_iter().peekable();
         for (i, c) in char_indecies {
             match c {
                 '!' => self.push_bang(i),

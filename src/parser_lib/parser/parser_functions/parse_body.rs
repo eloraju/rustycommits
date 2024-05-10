@@ -1,7 +1,3 @@
-use std::vec::IntoIter;
-
-use itertools::{Itertools, MultiPeek};
-
 use crate::parser_lib::{
     errors::SyntaxError,
     lexer::types::Token,
@@ -47,6 +43,8 @@ pub fn parse_body(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError>
 
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
+
     use crate::parser_lib::test_utils::TestTokenBuilder;
 
     use super::*;
@@ -64,7 +62,7 @@ mod tests {
         match &symbol {
             Symbol::Body {
                 start_delimeter,
-                text_tokens,
+                text_tokens: _,
             } => {
                 //assert_eq!(text_tokens.len(), 9);
                 assert_eq!(start_delimeter.len(), 2);
@@ -87,7 +85,7 @@ mod tests {
 
     #[test]
     fn should_parse_multi_line_body() {
-        let (mut tokens, expected) = TestTokenBuilder::new()
+        let (tokens, _) = TestTokenBuilder::new()
             .body(|builder| {
                 builder
                     .string("this is a body")

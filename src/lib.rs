@@ -1,1 +1,1 @@
-mod parser_lib;
+pub mod parser_lib;

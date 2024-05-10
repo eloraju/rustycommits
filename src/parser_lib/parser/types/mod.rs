@@ -1,5 +1,4 @@
 mod commit_message;
-pub mod enums;
 mod symbol;
 
 use std::vec::IntoIter;
@@ -8,6 +7,7 @@ use itertools::MultiPeek;
 
 use crate::parser_lib::lexer::types::Token;
 
+#[allow(unused_imports)]
 pub use self::commit_message::{CommitMessage, CommitMessageStr};
 pub use self::symbol::Symbol;
 

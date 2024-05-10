@@ -1,6 +1,4 @@
-use std::vec::IntoIter;
-
-use itertools::{Itertools, MultiPeek};
+use itertools::Itertools;
 
 use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::TokenIter};
 

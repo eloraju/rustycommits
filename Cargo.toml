@@ -3,6 +3,14 @@ name = "rustycommits"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "parser_lib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rustycommits"
+path = "src/main.rs"
+
 [dependencies]
 itertools = "0.12.1"
 thiserror = "1.0.59"

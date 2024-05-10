@@ -8,6 +8,8 @@ pub enum SyntaxError {
     UnexpectedTokenError(Token, String),
     #[error("Syntax error: Unexpted end of file")]
     UnexpectedEndOfFileError,
+    #[error("Syntax error: Expected a topic")]
+    TopicError(Token),
 }
 
 impl SyntaxError {

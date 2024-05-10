@@ -1,6 +1,4 @@
-use std::vec::IntoIter;
-
-use itertools::{Itertools, MultiPeek};
+use itertools::Itertools;
 
 use crate::parser_lib::{
     errors::SyntaxError,
@@ -25,7 +23,7 @@ fn check_start_delimiter(tokens: &mut TokenIter) -> Result<Vec<Token>, SyntaxErr
             Ok(vec![current.unwrap(), tokens.next().unwrap()])
         }
 
-        (Some(Token::Colon(_)), Some(token)) => {
+        (Some(Token::Colon(_)), Some(_)) => {
             Err(SyntaxError::expected_space(tokens.next().unwrap()))
         }
 
@@ -69,7 +67,7 @@ mod tests {
     use super::parse_description;
     #[test]
     fn should_parse_description() {
-        let (mut tokens, _) = TestTokenBuilder::new()
+        let (tokens, _) = TestTokenBuilder::new()
             .colon()
             .space()
             .word("description")
@@ -100,10 +98,11 @@ mod tests {
 
     #[test]
     fn should_parse_description_with_bang() {
-        let (mut tokens, expected) = TestTokenBuilder::new()
+        let (mut tokens, _) = TestTokenBuilder::new()
             .description_with_bang("description is this")
             .generate_iter();
         let res = parse_description(&mut tokens);
         let symbol = res.unwrap();
+        assert_eq!(symbol.full_string(), "!: description is this");
     }
 }

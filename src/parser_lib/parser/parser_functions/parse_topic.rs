@@ -22,7 +22,7 @@ mod tests {
 
     #[test]
     fn should_parse_type() {
-        let (mut tokens, expected) = TestTokenBuilder::new().word("feat").generate_iter();
+        let (mut tokens, _) = TestTokenBuilder::new().word("feat").generate_iter();
         let res = parse_topic(&mut tokens);
         let symbol = res.unwrap();
         assert!(matches!(symbol, Symbol::Topic { .. }));
