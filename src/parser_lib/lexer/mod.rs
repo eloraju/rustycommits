@@ -1,3 +1,3 @@
-mod lexer;
+mod lexer_impl;
 pub mod types;
-pub use lexer::Lexer;
+pub use lexer_impl::Lexer;
