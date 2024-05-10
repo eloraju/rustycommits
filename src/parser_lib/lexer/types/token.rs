@@ -41,13 +41,10 @@ pub enum Token {
     Bang(SlicableRcString),
     Colon(SlicableRcString),
     Hash(SlicableRcString),
-    NewLine(SlicableRcString),
+    Newline(SlicableRcString),
     ParenthesisClose(SlicableRcString),
     ParenthesisOpen(SlicableRcString),
     Space(SlicableRcString),
-    ColonSpace(SlicableRcString),
-    SpaceHash(SlicableRcString),
-    SectionSeparator(SlicableRcString),
 }
 
 impl Token {
@@ -57,13 +54,10 @@ impl Token {
             Token::Bang(value) => value,
             Token::Colon(value) => value,
             Token::Hash(value) => value,
-            Token::NewLine(value) => value,
+            Token::Newline(value) => value,
             Token::ParenthesisClose(value) => value,
             Token::ParenthesisOpen(value) => value,
             Token::Space(value) => value,
-            Token::ColonSpace(value) => value,
-            Token::SpaceHash(value) => value,
-            Token::SectionSeparator(value) => value,
         }
     }
 
@@ -73,13 +67,10 @@ impl Token {
             Token::Bang(value) => value.value(),
             Token::Colon(value) => value.value(),
             Token::Hash(value) => value.value(),
-            Token::NewLine(_) => "\\n".to_string(),
+            Token::Newline(_) => "\\n".to_string(),
             Token::ParenthesisClose(value) => value.value(),
             Token::ParenthesisOpen(value) => value.value(),
             Token::Space(value) => value.value(),
-            Token::ColonSpace(value) => value.value(),
-            Token::SectionSeparator(value) => value.value(),
-            Token::SpaceHash(value) => value.value(),
         }
     }
 
@@ -89,22 +80,16 @@ impl Token {
             Token::Bang(value) => value.start_index(),
             Token::Colon(value) => value.start_index(),
             Token::Hash(value) => value.start_index(),
-            Token::NewLine(value) => value.start_index(),
+            Token::Newline(value) => value.start_index(),
             Token::ParenthesisClose(value) => value.start_index(),
             Token::ParenthesisOpen(value) => value.start_index(),
             Token::Space(value) => value.start_index(),
-            Token::ColonSpace(value) => value.start_index(),
-            Token::SectionSeparator(value) => value.start_index(),
-            Token::SpaceHash(value) => value.start_index(),
         }
     }
 
     pub fn get_length(&self) -> usize {
         match self {
             Token::Word(token_data) => token_data.len(),
-            Token::ColonSpace(value) => value.len(),
-            Token::SectionSeparator(value) => value.len(),
-            Token::SpaceHash(value) => value.len(),
             _ => 1,
         }
     }
@@ -115,13 +100,10 @@ impl Token {
             Token::Bang(value) => value.end_index(),
             Token::Colon(value) => value.end_index(),
             Token::Hash(value) => value.end_index(),
-            Token::NewLine(value) => value.end_index(),
+            Token::Newline(value) => value.end_index(),
             Token::ParenthesisClose(value) => value.end_index(),
             Token::ParenthesisOpen(value) => value.end_index(),
             Token::Space(value) => value.end_index(),
-            Token::ColonSpace(value) => value.end_index(),
-            Token::SectionSeparator(value) => value.end_index(),
-            Token::SpaceHash(value) => value.end_index(),
         }
     }
 
@@ -131,13 +113,10 @@ impl Token {
             Token::Bang(_) => "Bang".to_string(),
             Token::Colon(_) => "Colon".to_string(),
             Token::Hash(_) => "Hash".to_string(),
-            Token::NewLine(_) => "NewLine".to_string(),
+            Token::Newline(_) => "NewLine".to_string(),
             Token::ParenthesisClose(_) => "ParenthesisClose".to_string(),
             Token::ParenthesisOpen(_) => "ParenthesisOpen".to_string(),
             Token::Space(_) => "Space".to_string(),
-            Token::ColonSpace(_) => "ColonSpace".to_string(),
-            Token::SectionSeparator(_) => "SectionSeparator".to_string(),
-            Token::SpaceHash(_) => "SpaceHash".to_string(),
         }
     }
 
@@ -147,13 +126,10 @@ impl Token {
             Token::Bang(value) => value.len(),
             Token::Colon(value) => value.len(),
             Token::Hash(value) => value.len(),
-            Token::NewLine(value) => value.end_index(),
+            Token::Newline(value) => value.end_index(),
             Token::ParenthesisClose(value) => value.len(),
             Token::ParenthesisOpen(value) => value.len(),
             Token::Space(value) => value.len(),
-            Token::ColonSpace(value) => value.len(),
-            Token::SectionSeparator(value) => value.len(),
-            Token::SpaceHash(value) => value.len(),
         }
     }
 

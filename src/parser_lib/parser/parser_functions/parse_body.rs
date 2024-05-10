@@ -2,64 +2,50 @@ use std::vec::IntoIter;
 
 use itertools::{Itertools, MultiPeek};
 
-use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
+use crate::parser_lib::{
+    errors::SyntaxError,
+    lexer::types::Token,
+    parser::types::{Symbol, TokenIter},
+};
 
-fn take_words(
-    tokens: &mut MultiPeek<IntoIter<Token>>,
-    buffer: Option<Vec<Token>>,
-) -> Result<Vec<Token>, SyntaxError> {
-    let mut text_tokens = buffer.unwrap_or_default();
-    text_tokens.extend(
-        tokens
-            .take_while_ref(|token| {
-                dbg!(token);
-                match token {
-                    Token::NewLine(_) => false,
-                    _ => true,
-                }
-            })
-            .collect_vec(),
-    );
+use super::utils::{has_double_newline, has_footer_start, take_until_newline_cond};
 
+pub fn parse_start_delimeter(tokens: &mut TokenIter) -> Option<Vec<Token>> {
+    if has_double_newline(tokens) {
+        Some(vec![tokens.next().unwrap(), tokens.next().unwrap()])
+    } else {
+        None
+    }
+}
+
+fn check_end_of_body(tokens: &mut TokenIter) -> Result<bool, SyntaxError> {
     match tokens.peek() {
-        Some(Token::NewLine(_)) => match tokens.peek() {
-            Some(Token::NewLine(_)) => Ok(text_tokens),
-            Some(_) => take_words(tokens, Some(text_tokens)),
-            None => Ok(text_tokens),
+        Some(Token::Newline(_)) => match tokens.peek() {
+            Some(_) => has_footer_start(tokens),
+            None => Ok(false),
         },
-        Some(_) => take_words(tokens, Some(text_tokens)),
-        None => Ok(text_tokens),
+        Some(_) => Ok(false),
+        None => Ok(true),
     }
 }
 
-fn check_end_delimeter(
-    tokens: &mut MultiPeek<IntoIter<Token>>,
-) -> Result<Option<Vec<Token>>, SyntaxError> {
-    let mut end_delimeter: Vec<Token> = Vec::new();
-    let current = tokens.next();
-    let next = tokens.peek();
-    match (&current, next) {
-        (Some(Token::NewLine(_)), Some(Token::NewLine(_))) => {
-            end_delimeter.push(current.unwrap());
-            end_delimeter.push(tokens.next().unwrap());
-            Ok(Some(end_delimeter))
+pub fn parse_body(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError> {
+    let start_delimeter = parse_start_delimeter(tokens);
+    match (&start_delimeter, tokens.peek()) {
+        (None, Some(toke)) => {
+            return Err(SyntaxError::UnexpectedTokenError(
+                toke.to_owned().clone(),
+                "No newline before body".to_string(),
+            ))
         }
-        (Some(Token::NewLine(_)), None) => {
-            end_delimeter.push(current.unwrap());
-            Ok(Some(end_delimeter))
-        }
-        (Some(_), _) => Err(SyntaxError::expected_newline(current.unwrap())),
-        (None, _) => Ok(None),
-    }
-}
-
-pub fn parse_body(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Symbol>, SyntaxError> {
-    let text_tokens = take_words(tokens, None)?;
-    let end_delimeter = check_end_delimeter(tokens)?;
+        (None, None) => return Ok(None),
+        (Some(_), _) => (),
+    };
+    let text_tokens = take_until_newline_cond(tokens, check_end_of_body)?;
 
     Ok(Some(Symbol::Body {
+        start_delimeter: start_delimeter.unwrap(),
         text_tokens,
-        end_delimeter,
     }))
 }
 
@@ -71,6 +57,8 @@ mod tests {
     #[test]
     fn should_parse_body() {
         let mut tokens = TestTokens::new()
+            .newline()
+            .newline()
             .word("this")
             .space()
             .word("is")
@@ -86,13 +74,12 @@ mod tests {
         let symbol = result.unwrap().unwrap();
         match &symbol {
             Symbol::Body {
+                start_delimeter: _,
                 text_tokens,
-                end_delimeter: end_separator,
             } => {
-                assert_eq!(text_tokens.len(), 7);
-                assert_eq!(end_separator.as_ref().unwrap().len(), 2);
-                assert_eq!(symbol.raw_value(), "this is a body\n\n");
-                assert_eq!(symbol.value(), "this is a body");
+                assert_eq!(text_tokens.len(), 9);
+                assert_eq!(symbol.raw_value(), "\n\nthis is a body\n\n");
+                assert_eq!(symbol.value(), "this is a body\n\n");
             }
             _ => {
                 panic!("Invalid symbol type");

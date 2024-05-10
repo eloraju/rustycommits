@@ -1,12 +1,12 @@
-use std::vec::IntoIter;
+use itertools::Itertools;
 
-use itertools::MultiPeek;
+use crate::parser_lib::{
+    errors::SyntaxError,
+    lexer::types::Token,
+    parser::types::{Symbol, TokenIter},
+};
 
-use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
-
-fn check_start_delimiter(
-    tokens: &mut MultiPeek<IntoIter<Token>>,
-) -> Result<Option<Token>, SyntaxError> {
+fn check_start_delimiter(tokens: &mut TokenIter) -> Result<Option<Token>, SyntaxError> {
     let current = tokens.peek();
     match current {
         Some(Token::ParenthesisOpen(_)) => Ok(tokens.next()),
@@ -19,7 +19,7 @@ fn check_start_delimiter(
     }
 }
 
-fn take_word(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token, SyntaxError> {
+fn take_word(tokens: &mut TokenIter) -> Result<Token, SyntaxError> {
     let current = tokens.next();
     match current {
         Some(Token::Word(_)) => Ok(current.unwrap()),
@@ -28,7 +28,7 @@ fn take_word(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token, SyntaxErr
     }
 }
 
-fn check_end_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token, SyntaxError> {
+fn check_end_delimiter(tokens: &mut TokenIter) -> Result<Token, SyntaxError> {
     let current = tokens.next();
     match current {
         Some(Token::ParenthesisClose(_)) => Ok(current.unwrap()),
@@ -37,7 +37,7 @@ fn check_end_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token,
     }
 }
 
-pub fn parse_scope(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Symbol>, SyntaxError> {
+pub fn parse_scope(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError> {
     let start_delimiter = check_start_delimiter(tokens)?;
 
     if start_delimiter.is_none() {

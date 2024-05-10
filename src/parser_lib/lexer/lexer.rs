@@ -1,4 +1,4 @@
-use std::{iter::Peekable, rc::Rc, str::CharIndices};
+use std::rc::Rc;
 
 use crate::parser_lib::SlicableRcString;
 
@@ -41,11 +41,11 @@ impl Lexer {
                 // TODO: Come up with a better way to do these handle_x functions
                 // currently we're checking the last token pushed to see if we need to merge...
                 // Peeking would be a better option but haven't yet had the time to look into it
-                '#' => self.handle_hash(i),
-                '\n' => self.handle_newline(i),
+                '#' => self.push_hash(i),
+                '\n' => self.push_newline(i),
                 ')' => self.push_parenthesis_close(i),
                 '(' => self.push_parenthesis_open(i),
-                ' ' => self.handle_space(i),
+                ' ' => self.push_space(i),
                 _ => self.word_length += 1,
             };
         }
@@ -62,23 +62,9 @@ impl Lexer {
         self.push_token(Token::Colon(self.message.substr(index..index + 1)), index)
     }
 
-    fn handle_newline(&mut self, index: usize) {
+    fn push_newline(&mut self, index: usize) {
         self.push_if_word(index);
-        let previous_token = self.tokens.pop();
-        match &previous_token {
-            Some(Token::NewLine(_)) => {
-                let prev_i = previous_token.unwrap().get_start_index();
-                self.push_token(
-                    Token::SectionSeparator(self.message.substr(prev_i..index + 1)),
-                    index,
-                );
-            }
-            Some(_) => {
-                self.tokens.push(previous_token.unwrap());
-                self.push_token(Token::NewLine(self.message.substr(index..index + 1)), index);
-            }
-            None => self.push_token(Token::NewLine(self.message.substr(index..index + 1)), index),
-        }
+        self.push_token(Token::Newline(self.message.substr(index..index + 1)), index);
     }
 
     fn push_bang(&mut self, index: usize) {
@@ -99,42 +85,14 @@ impl Lexer {
         );
     }
 
-    fn handle_space(&mut self, index: usize) {
+    fn push_space(&mut self, index: usize) {
         self.push_if_word(index);
-        let previous_token = self.tokens.pop();
-        match &previous_token {
-            Some(Token::Colon(_)) => {
-                let prev_i = previous_token.unwrap().get_start_index();
-                self.push_token(
-                    Token::ColonSpace(self.message.substr(prev_i..index + 1)),
-                    index,
-                );
-            }
-            Some(_) => {
-                self.tokens.push(previous_token.unwrap());
-                self.push_token(Token::Space(self.message.substr(index..index + 1)), index);
-            }
-            None => self.push_token(Token::Space(self.message.substr(index..index + 1)), index),
-        };
+        self.push_token(Token::Space(self.message.substr(index..index + 1)), index);
     }
 
-    fn handle_hash(&mut self, index: usize) {
+    fn push_hash(&mut self, index: usize) {
         self.push_if_word(index);
-        let previous_token = self.tokens.pop();
-        match &previous_token {
-            Some(Token::Space(_)) => {
-                let prev_i = previous_token.unwrap().get_start_index();
-                self.push_token(
-                    Token::SpaceHash(self.message.substr(prev_i..index + 1)),
-                    index,
-                );
-            }
-            Some(_) => {
-                self.tokens.push(previous_token.unwrap());
-                self.push_token(Token::Hash(self.message.substr(index..index + 1)), index);
-            }
-            None => self.push_token(Token::Hash(self.message.substr(index..index + 1)), index),
-        };
+        self.push_token(Token::Hash(self.message.substr(index..index + 1)), index)
     }
 
     fn push_token(&mut self, token: Token, index: usize) {
@@ -190,55 +148,15 @@ mod tests {
         let message = Rc::new("feat: test".to_string());
         let mut lexer = Lexer::new();
         let tokens = lexer.process(&message);
-        assert_eq!(tokens.len(), 3);
-
-        match &tokens[1] {
-            Token::ColonSpace(d) => assert_eq!(d.value(), ": "),
-            _ => {}
-        }
-    }
-
-    #[test]
-    fn should_tokenize_tags() {
-        let message = Rc::new("hello-world: #tag\nAnother-tag: Hi there".to_string());
-        let mut lexer = Lexer::new();
-        let tokens = lexer.process(&message);
-        assert_eq!(tokens.len(), 10);
-
-        match &tokens[0] {
-            Token::Word(d) => assert_eq!(d.value(), "hello-world"),
-            _ => {}
-        }
-
-        match &tokens[1] {
-            Token::ColonSpace(d) => assert_eq!(d.value(), ": "),
-            _ => {}
-        }
-        match &tokens[6] {
-            Token::ColonSpace(d) => assert_eq!(d.value(), ": "),
-            _ => {}
-        }
-    }
-
-    #[test]
-    fn should_tokenize_section_separator() {
-        let message = Rc::new("feat test\n\n".to_string());
-        let mut lexer = Lexer::new();
-        let tokens = lexer.process(&message);
         assert_eq!(tokens.len(), 4);
 
-        match &tokens[3] {
-            Token::SectionSeparator(d) => assert_eq!(d.value(), "\n\n"),
+        match &tokens[1] {
+            Token::Colon(d) => assert_eq!(d.value(), ":"),
             _ => {}
         }
-    }
-
-    #[test]
-    fn should_tokenize_space_hash() {
-        let msg = Rc::new("fix #12".to_string());
-        let mut lexer = Lexer::new();
-        let tokens = lexer.process(&msg);
-        assert_eq!(tokens.len(), 3);
-        assert_eq!(tokens[1].get_value(), " #");
+        match &tokens[1] {
+            Token::Space(d) => assert_eq!(d.value(), " "),
+            _ => {}
+        }
     }
 }

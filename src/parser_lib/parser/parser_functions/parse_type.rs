@@ -1,10 +1,10 @@
-use std::vec::IntoIter;
-
-use itertools::MultiPeek;
-
-use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
+use crate::parser_lib::{
+    errors::SyntaxError,
+    lexer::types::Token,
+    parser::types::{Symbol, TokenIter},
+};
 // Type is a single word, a bang is the only char we're interested in
-pub fn parse_type(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, SyntaxError> {
+pub fn parse_type(tokens: &mut TokenIter) -> Result<Symbol, SyntaxError> {
     let current = tokens.next();
     match current {
         Some(Token::Word(_)) => Ok(Symbol::Type {

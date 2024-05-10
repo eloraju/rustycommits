@@ -7,12 +7,13 @@ pub use slicable_rc_string::SlicableRcString;
 
 #[cfg(test)]
 pub mod test_utils {
-    use std::{rc::Rc, vec::IntoIter};
+    use std::rc::Rc;
 
-    use itertools::{Itertools, MultiPeek};
+    use itertools::Itertools;
 
     use super::{
         lexer::types::{Token, WordDetails},
+        parser::types::TokenIter,
         SlicableRcString,
     };
 
@@ -23,8 +24,7 @@ pub mod test_utils {
         NewLine(usize),
         ParenthesisOpen(usize),
         ParenthesisClose(usize),
-        ColonSpace(usize),
-        SpaceHash(usize),
+        Hash(usize),
     }
     pub struct TestTokens {
         test_token_buf: Vec<TokenType>,
@@ -60,10 +60,8 @@ pub mod test_utils {
             return self;
         }
 
-        pub fn space_hash(&mut self) -> &mut Self {
-            self.test_token_buf
-                .push(TokenType::SpaceHash(self.next_index()));
-            self.string.push(' ');
+        pub fn hash(&mut self) -> &mut Self {
+            self.test_token_buf.push(TokenType::Hash(self.next_index()));
             self.string.push('#');
             return self;
         }
@@ -72,14 +70,6 @@ pub mod test_utils {
             self.test_token_buf
                 .push(TokenType::Colon(self.next_index()));
             self.string.push(':');
-            return self;
-        }
-
-        pub fn colon_space(&mut self) -> &mut Self {
-            self.test_token_buf
-                .push(TokenType::ColonSpace(self.next_index()));
-            self.string.push(':');
-            self.string.push(' ');
             return self;
         }
 
@@ -117,10 +107,13 @@ pub mod test_utils {
                     TokenType::Space(index) => {
                         tokens.push(Token::Space(slicable_rc_string.substr(*index..*index + 1)))
                     }
+                    TokenType::Hash(index) => {
+                        tokens.push(Token::Hash(slicable_rc_string.substr(*index..*index + 1)))
+                    }
                     TokenType::Colon(index) => {
                         tokens.push(Token::Colon(slicable_rc_string.substr(*index..*index + 1)))
                     }
-                    TokenType::NewLine(index) => tokens.push(Token::NewLine(
+                    TokenType::NewLine(index) => tokens.push(Token::Newline(
                         slicable_rc_string.substr(*index..*index + 1),
                     )),
                     TokenType::ParenthesisClose(index) => tokens.push(Token::ParenthesisClose(
@@ -129,18 +122,12 @@ pub mod test_utils {
                     TokenType::ParenthesisOpen(index) => tokens.push(Token::ParenthesisOpen(
                         slicable_rc_string.substr(*index..*index + 1),
                     )),
-                    TokenType::ColonSpace(index) => tokens.push(Token::ColonSpace(
-                        slicable_rc_string.substr(*index..*index + 2),
-                    )),
-                    TokenType::SpaceHash(index) => tokens.push(Token::SpaceHash(
-                        slicable_rc_string.substr(*index..*index + 2),
-                    )),
                 }
             }
             return tokens;
         }
 
-        pub fn generate_iter(&mut self) -> MultiPeek<IntoIter<Token>> {
+        pub fn generate_iter(&mut self) -> TokenIter {
             return self.generate().into_iter().multipeek();
         }
     }

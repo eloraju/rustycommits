@@ -3,6 +3,7 @@ mod parse_description;
 mod parse_footer;
 mod parse_scope;
 mod parse_type;
+mod utils;
 
 pub use self::parse_body::parse_body;
 pub use self::parse_description::parse_description;

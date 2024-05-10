@@ -2,9 +2,13 @@ use std::vec::IntoIter;
 
 use itertools::{Itertools, MultiPeek};
 
-use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::Symbol};
+use crate::parser_lib::{
+    errors::SyntaxError,
+    lexer::types::Token,
+    parser::types::{Symbol, TokenIter},
+};
 
-fn check_bang(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Token>, SyntaxError> {
+fn check_bang(tokens: &mut TokenIter) -> Result<Option<Token>, SyntaxError> {
     let current = tokens.peek();
     match current {
         Some(Token::Bang(_)) => Ok(tokens.next()),
@@ -13,58 +17,45 @@ fn check_bang(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Option<Token>, 
     }
 }
 
-fn check_start_delimiter(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Token, SyntaxError> {
+fn check_start_delimiter(tokens: &mut TokenIter) -> Result<Vec<Token>, SyntaxError> {
     let current = tokens.next();
-    match current {
-        Some(Token::ColonSpace(_)) => Ok(current.unwrap()),
-        Some(token) => match token {
-            Token::Colon(_) => Err(SyntaxError::expected_space(tokens.next().unwrap())),
-            _ => Err(SyntaxError::expected_colon(token)),
-        },
-        None => Err(SyntaxError::UnexpectedEndOfFileError),
+    let next = tokens.peek();
+    match (&current, next) {
+        (Some(Token::Colon(_)), Some(Token::Space(_))) => {
+            Ok(vec![current.unwrap(), tokens.next().unwrap()])
+        }
+
+        (Some(Token::Colon(_)), Some(token)) => {
+            Err(SyntaxError::expected_space(tokens.next().unwrap()))
+        }
+
+        (Some(_), _) => Err(SyntaxError::expected_colon(current.unwrap())),
+        (None, _) => Err(SyntaxError::UnexpectedEndOfFileError),
     }
 }
 
-fn take_words(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Vec<Token>, SyntaxError> {
+fn take_words(tokens: &mut TokenIter) -> Result<Vec<Token>, SyntaxError> {
     let next = tokens.peek();
-    // Start delim check doesn't check this so we gotta make sure there's something in there
     if next.is_none() {
         return Err(SyntaxError::UnexpectedEndOfFileError);
     }
 
     Ok(tokens
         .take_while_ref(|token| match token {
-            Token::SectionSeparator(_) => false,
+            Token::Newline(_) => false,
             _ => true,
         })
         .collect_vec())
 }
 
-fn check_end_delimiter(
-    tokens: &mut MultiPeek<IntoIter<Token>>,
-) -> Result<Option<Token>, SyntaxError> {
-    let mut end_delimiter: Vec<Token> = Vec::new();
-    let current = tokens.next();
-    match &current {
-        Some(Token::SectionSeparator(_)) => Ok(Some(current.unwrap())),
-        None => Ok(None),
-        _ => Err(SyntaxError::UnexpectedTokenError(
-            current.unwrap(),
-            "'\n\n'".to_string(),
-        )),
-    }
-}
-
-pub fn parse_description(tokens: &mut MultiPeek<IntoIter<Token>>) -> Result<Symbol, SyntaxError> {
+pub fn parse_description(tokens: &mut TokenIter) -> Result<Symbol, SyntaxError> {
     let braking_change_token = check_bang(tokens)?;
     let start_delimeter = check_start_delimiter(tokens)?;
     let text_tokens = take_words(tokens)?;
-    let end_delimiter = check_end_delimiter(tokens)?;
 
     Ok(Symbol::Description {
         start_delimeter,
         text_tokens,
-        end_delimiter,
         braking_change_token,
     })
 }
@@ -96,14 +87,12 @@ mod tests {
             Symbol::Description {
                 start_delimeter,
                 text_tokens,
-                end_delimiter,
                 braking_change_token: _,
             } => {
                 assert_eq!(start_delimeter.len(), 2);
                 assert_eq!(text_tokens.len(), 5);
-                assert_eq!(end_delimiter.as_ref().unwrap().len(), 2);
-                assert_eq!(symbol.raw_value(), ": description is this\n\n");
-                assert_eq!(symbol.value().to_string(), "description is this");
+                assert_eq!(symbol.raw_value(), ": description is this");
+                assert_eq!(symbol.value(), "description is this");
             }
             _ => panic!("Error: {:?}", symbol),
         }

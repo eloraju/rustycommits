@@ -32,17 +32,16 @@ pub enum Symbol {
     },
     Description {
         text_tokens: Vec<Token>,
-        start_delimeter: Token,
-        end_delimiter: Option<Token>,
+        start_delimeter: Vec<Token>,
         braking_change_token: Option<Token>,
     },
     Body {
+        start_delimeter: Vec<Token>,
         text_tokens: Vec<Token>,
-        end_delimeter: Option<Vec<Token>>,
     },
     Footer {
-        key: Token,
-        delimiter: Token,
+        // Key is either 'word: ' or 'word #word'
+        key: Vec<Token>,
         text_tokens: Vec<Token>,
     },
 }
@@ -57,15 +56,10 @@ impl Symbol {
                 text_tokens: tokens,
                 ..
             } => tokens.iter().collect(),
-            Symbol::Footer {
-                key,
-                delimiter,
-                text_tokens: value,
-            } => {
+            Symbol::Footer { key, text_tokens } => {
                 let mut tokens: Vec<&Token> = Vec::new();
-                tokens.push(key);
-                tokens.push(delimiter);
-                tokens.extend(value);
+                tokens.extend(key);
+                tokens.extend(text_tokens);
                 return tokens;
             }
         }
@@ -86,51 +80,43 @@ impl Symbol {
             Symbol::Description {
                 text_tokens,
                 start_delimeter,
-                end_delimiter,
                 braking_change_token,
             } => {
                 let mut tokens = Vec::new();
-                tokens.push(start_delimeter);
-                tokens.extend(text_tokens);
-                if let Some(end_delimiter) = end_delimiter {
-                    tokens.push(end_delimiter);
-                }
                 if let Some(braking_token) = braking_change_token {
                     tokens.push(braking_token);
                 }
+                tokens.extend(start_delimeter);
+                tokens.extend(text_tokens);
                 tokens
             }
             Symbol::Body {
+                start_delimeter,
                 text_tokens,
-                end_delimeter,
             } => {
                 let mut tokens: Vec<&Token> = Vec::new();
+                tokens.extend(start_delimeter);
                 tokens.extend(text_tokens);
-                if let Some(end_delimeter) = end_delimeter {
-                    tokens.extend(end_delimeter);
-                }
                 tokens
             }
 
             Symbol::Footer {
                 key,
-                delimiter,
                 text_tokens: value,
             } => {
                 let mut tokens: Vec<&Token> = Vec::new();
-                tokens.push(key);
-                tokens.push(delimiter);
+                tokens.extend(key);
                 tokens.extend(value);
                 return tokens;
             }
         }
     }
-    pub fn raw_value(&self) -> SlicableRcString {
-        self.get_all_tokens().to_srcs()
+    pub fn raw_value(&self) -> String {
+        self.get_all_tokens().to_srcs().to_string()
     }
 
-    pub fn value(&self) -> SlicableRcString {
-        self.get_content_tokens().to_srcs()
+    pub fn value(&self) -> String {
+        self.get_content_tokens().to_srcs().to_string()
     }
 
     pub fn content_length(&self) -> usize {
