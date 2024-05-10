@@ -60,7 +60,7 @@ impl Symbol {
                 let mut tokens: Vec<&Token> = Vec::new();
                 tokens.extend(key);
                 tokens.extend(text_tokens);
-                return tokens;
+                tokens
             }
         }
     }
@@ -107,7 +107,7 @@ impl Symbol {
                 let mut tokens: Vec<&Token> = Vec::new();
                 tokens.extend(key);
                 tokens.extend(value);
-                return tokens;
+                tokens
             }
         }
     }

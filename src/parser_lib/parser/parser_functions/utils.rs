@@ -48,7 +48,7 @@ pub fn take_until_newline_cond(
                 return Ok(text_tokens);
             }
             text_tokens.extend(take_until_newline_cond(tokens, breakout)?);
-            return Ok(text_tokens);
+            Ok(text_tokens)
         }
         Some(token) => Err(SyntaxError::UnexpectedTokenError(
             token.to_owned().clone(),

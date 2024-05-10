@@ -15,7 +15,7 @@ fn parse_key(tokens: &mut TokenIter) -> Result<Option<Vec<Token>>, SyntaxError> 
         ];
         return Ok(Some(key));
     }
-    return Ok(None);
+    Ok(None)
 }
 
 fn parse_footer_text(tokens: &mut TokenIter) -> Result<Vec<Token>, SyntaxError> {
@@ -45,13 +45,13 @@ fn recurse_footers(tokens: &mut TokenIter) -> Result<Option<Vec<Symbol>>, Syntax
                 }
             }
 
-            return Ok(Some(footers));
+            Ok(Some(footers))
         }
     }
 }
 
 pub fn parse_footers(tokens: &mut TokenIter) -> Result<Option<Vec<Symbol>>, SyntaxError> {
-    return Ok(recurse_footers(tokens)?);
+    recurse_footers(tokens)
 }
 
 #[cfg(test)]

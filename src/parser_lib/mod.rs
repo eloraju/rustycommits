@@ -12,6 +12,12 @@ pub struct CommitMessageParser {
     lexer: Lexer,
 }
 
+impl Default for CommitMessageParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CommitMessageParser {
     pub fn new() -> Self {
         Self {
