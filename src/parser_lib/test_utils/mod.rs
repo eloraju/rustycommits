@@ -1,7 +1,7 @@
 mod test_token_builder;
 pub use test_token_builder::{ExpectedStrings, TestTokenBuilder};
 
-use crate::parser_lib::parser::types::{CommitMessage, CommitMessageStr};
+use crate::parser_lib::parser::types::CommitMessage;
 
 pub fn assert_commit_message_eq_expected(msg: CommitMessage, expected: ExpectedStrings) {
     let msg_no_delims = CommitMessage::to_no_delim_strings(msg.clone());

@@ -1,4 +1,6 @@
-use itertools::Itertools;
+use std::vec::IntoIter;
+
+use itertools::{Itertools, MultiPeek};
 
 use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::TokenIter};
 
@@ -70,4 +72,14 @@ pub fn has_double_newline(tokens: &mut TokenIter) -> bool {
     tokens.reset_peek();
 
     result
+}
+
+trait TakeUntilSectionSeparation {
+    fn take_until_footer(&mut self) -> Result<Vec<Token>, SyntaxError>;
+    fn take_until_body(&mut self) -> Result<Vec<Token>, SyntaxError>;
+}
+
+impl TakeUntilSectionSeparation for MultiPeek<IntoIter<Token>> {
+    fn take_until_footer(&mut self) -> Result<Vec<Token>, SyntaxError> {}
+    fn take_until_body(&mut self) -> Result<Vec<Token>, SyntaxError> {}
 }

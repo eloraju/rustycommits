@@ -1,4 +1,4 @@
-use super::Symbol;
+use crate::parser_lib::parser::types::Symbol;
 
 #[derive(Debug, Default, Clone)]
 pub struct CommitMessage {
@@ -7,6 +7,15 @@ pub struct CommitMessage {
     pub description: Option<Symbol>,
     pub body: Option<Symbol>,
     pub footers: Option<Vec<Symbol>>,
+}
+
+pub struct Scope {
+    data: Option<Symbol>,
+}
+
+trait MessageParts {
+    fn value(&self) -> String;
+    fn start_deli(&self) -> String;
 }
 
 #[derive(Debug)]
