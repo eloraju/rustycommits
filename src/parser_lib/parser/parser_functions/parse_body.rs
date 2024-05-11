@@ -6,7 +6,7 @@ use crate::parser_lib::{
 
 use super::utils::{has_double_newline, has_footer_start, take_until_newline_cond};
 
-pub fn parse_start_delimeter(tokens: &mut TokenIter) -> Option<Vec<Token>> {
+pub fn parse_start_delimiter(tokens: &mut TokenIter) -> Option<Vec<Token>> {
     if has_double_newline(tokens) {
         Some(vec![tokens.next().unwrap(), tokens.next().unwrap()])
     } else {
@@ -22,8 +22,8 @@ fn check_end_of_body(tokens: &mut TokenIter) -> Result<bool, SyntaxError> {
 }
 
 pub fn parse_body(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError> {
-    let start_delimeter = parse_start_delimeter(tokens);
-    match (&start_delimeter, tokens.peek()) {
+    let start_delimiter = parse_start_delimiter(tokens);
+    match (&start_delimiter, tokens.peek()) {
         (None, Some(toke)) => {
             return Err(SyntaxError::UnexpectedTokenError(
                 toke.to_owned().clone(),
@@ -36,7 +36,7 @@ pub fn parse_body(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError>
     let text_tokens = take_until_newline_cond(tokens, check_end_of_body)?;
 
     Ok(Some(Symbol::Body {
-        start_delimeter: start_delimeter.unwrap(),
+        start_delimiter: start_delimiter.unwrap(),
         text_tokens,
     }))
 }
@@ -61,11 +61,11 @@ mod tests {
         let symbol = result.unwrap().unwrap();
         match &symbol {
             Symbol::Body {
-                start_delimeter,
+                start_delimiter,
                 text_tokens: _,
             } => {
                 //assert_eq!(text_tokens.len(), 9);
-                assert_eq!(start_delimeter.len(), 2);
+                assert_eq!(start_delimiter.len(), 2);
                 assert_eq!(
                     symbol.full_string(),
                     "\n\nthis is a body\n\n",

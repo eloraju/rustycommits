@@ -48,11 +48,11 @@ fn take_words(tokens: &mut TokenIter) -> Result<Vec<Token>, SyntaxError> {
 
 pub fn parse_description(tokens: &mut TokenIter) -> Result<Symbol, SyntaxError> {
     let braking_change_token = check_bang(tokens)?;
-    let start_delimeter = check_start_delimiter(tokens)?;
+    let start_delimiter = check_start_delimiter(tokens)?;
     let text_tokens = take_words(tokens)?;
 
     Ok(Symbol::Description {
-        start_delimeter,
+        start_delimiter,
         text_tokens,
         braking_change_token,
     })
@@ -83,11 +83,11 @@ mod tests {
         let symbol = res.unwrap();
         match &symbol {
             Symbol::Description {
-                start_delimeter,
+                start_delimiter,
                 text_tokens,
                 braking_change_token: _,
             } => {
-                assert_eq!(start_delimeter.len(), 2);
+                assert_eq!(start_delimiter.len(), 2);
                 assert_eq!(text_tokens.len(), 5);
                 assert_eq!(symbol.full_string(), ": description is this");
                 assert_eq!(symbol.no_delims_string(), "description is this");

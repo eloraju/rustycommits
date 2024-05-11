@@ -46,8 +46,8 @@ pub fn parse_scope(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError
     let end_delimiter = check_end_delimiter(tokens)?;
     Ok(Some(Symbol::Scope {
         text_token: word,
-        start_delimeter: start_delimiter.unwrap(),
-        end_delimeter: end_delimiter,
+        start_delimiter: start_delimiter.unwrap(),
+        end_delimiter: end_delimiter,
     }))
 }
 

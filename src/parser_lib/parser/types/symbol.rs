@@ -27,16 +27,16 @@ pub enum Symbol {
     },
     Scope {
         text_token: Token,
-        start_delimeter: Token,
-        end_delimeter: Token,
+        start_delimiter: Token,
+        end_delimiter: Token,
     },
     Description {
         text_tokens: Vec<Token>,
-        start_delimeter: Vec<Token>,
+        start_delimiter: Vec<Token>,
         braking_change_token: Option<Token>,
     },
     Body {
-        start_delimeter: Vec<Token>,
+        start_delimiter: Vec<Token>,
         text_tokens: Vec<Token>,
     },
     Footer {
@@ -73,29 +73,29 @@ impl Symbol {
 
             Symbol::Scope {
                 text_token,
-                end_delimeter,
-                start_delimeter,
-            } => vec![start_delimeter, text_token, end_delimeter],
+                end_delimiter,
+                start_delimiter,
+            } => vec![start_delimiter, text_token, end_delimiter],
 
             Symbol::Description {
                 text_tokens,
-                start_delimeter,
+                start_delimiter,
                 braking_change_token,
             } => {
                 let mut tokens = Vec::new();
                 if let Some(braking_token) = braking_change_token {
                     tokens.push(braking_token);
                 }
-                tokens.extend(start_delimeter);
+                tokens.extend(start_delimiter);
                 tokens.extend(text_tokens);
                 tokens
             }
             Symbol::Body {
-                start_delimeter,
+                start_delimiter,
                 text_tokens,
             } => {
                 let mut tokens: Vec<&Token> = Vec::new();
-                tokens.extend(start_delimeter);
+                tokens.extend(start_delimiter);
                 tokens.extend(text_tokens);
                 tokens
             }
