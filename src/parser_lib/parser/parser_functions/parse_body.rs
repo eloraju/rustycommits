@@ -25,7 +25,7 @@ pub fn parse_body(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError>
     let start_delimeter = parse_start_delimeter(tokens);
     match (&start_delimeter, tokens.peek()) {
         (None, Some(toke)) => {
-            return Err(SyntaxError::UnexpectedToken(
+            return Err(SyntaxError::UnexpectedTokenError(
                 toke.to_owned().clone(),
                 "No newline before body".to_string(),
             ))

@@ -35,10 +35,6 @@ impl SlicableRcString {
         self.span.end - self.span.start
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     pub fn value(&self) -> String {
         self.string[self.span.clone()].to_string()
     }

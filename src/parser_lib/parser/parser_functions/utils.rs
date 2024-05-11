@@ -33,7 +33,10 @@ pub fn take_until_newline_cond(
     breakout: BreakoutFunction,
 ) -> Result<Vec<Token>, SyntaxError> {
     let mut text_tokens: Vec<Token> = tokens
-        .take_while_ref(|token| matches!(token, Token::Newline(_)))
+        .take_while_ref(|token| match token {
+            Token::Newline(_) => false,
+            _ => true,
+        })
         .collect();
 
     let newline = tokens.next();
@@ -47,7 +50,7 @@ pub fn take_until_newline_cond(
             text_tokens.extend(take_until_newline_cond(tokens, breakout)?);
             Ok(text_tokens)
         }
-        Some(token) => Err(SyntaxError::UnexpectedToken(
+        Some(token) => Err(SyntaxError::UnexpectedTokenError(
             token.to_owned().clone(),
             "this not to get here in the first place.".to_string(),
         )),
@@ -57,8 +60,13 @@ pub fn take_until_newline_cond(
 
 pub fn has_double_newline(tokens: &mut TokenIter) -> bool {
     tokens.reset_peek();
-    let result = matches!(tokens.peek(), Some(Token::Newline(_)))
-        && matches!(tokens.peek(), Some(Token::Newline(_)));
+    let result = match tokens.peek() {
+        Some(Token::Newline(_)) => match tokens.peek() {
+            Some(Token::Newline(_)) => true,
+            _ => false,
+        },
+        _ => false,
+    };
     tokens.reset_peek();
 
     result

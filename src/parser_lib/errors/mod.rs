@@ -5,34 +5,36 @@ use super::lexer::types::Token;
 #[derive(Error, Debug)]
 pub enum SyntaxError {
     #[error("Syntax error: Unexpected token '{}' at index {}. Expected {1}.", .0.get_value(), .0.get_start_index())]
-    UnexpectedToken(Token, String),
+    UnexpectedTokenError(Token, String),
     #[error("Syntax error: Unexpted end of file")]
-    UnexpectedEndOfFile,
+    UnexpectedEndOfFileError,
+    #[error("Syntax error: Expected a topic")]
+    TopicError(Token),
 }
 
 impl SyntaxError {
     pub fn expected_newline(token: Token) -> Self {
-        SyntaxError::UnexpectedToken(token, "'\n'".to_string())
+        SyntaxError::UnexpectedTokenError(token, "'\n'".to_string())
     }
 
     pub fn expected_string(token: Token) -> Self {
-        SyntaxError::UnexpectedToken(token, "a string".to_string())
+        SyntaxError::UnexpectedTokenError(token, "a string".to_string())
     }
 
     pub fn expected_colon(token: Token) -> Self {
-        SyntaxError::UnexpectedToken(token, "':'".to_string())
+        SyntaxError::UnexpectedTokenError(token, "':'".to_string())
     }
 
     pub fn expected_space(token: Token) -> Self {
-        SyntaxError::UnexpectedToken(token, "a space".to_string())
+        SyntaxError::UnexpectedTokenError(token, "a space".to_string())
     }
 
     pub fn expected_parent_open(token: Token) -> Self {
-        SyntaxError::UnexpectedToken(token, "'('".to_string())
+        SyntaxError::UnexpectedTokenError(token, "'('".to_string())
     }
 
     pub fn expected_parent_close(token: Token) -> Self {
-        SyntaxError::UnexpectedToken(token, "')'".to_string())
+        SyntaxError::UnexpectedTokenError(token, "')'".to_string())
     }
 }
 
@@ -48,7 +50,7 @@ mod tests {
             .0
             .pop()
             .unwrap();
-        let error = SyntaxError::UnexpectedToken(token, "':'".to_string());
+        let error = SyntaxError::UnexpectedTokenError(token, "':'".to_string());
         assert_eq!(
             error.to_string(),
             "Syntax error: Unexpected token 'test' at index 0. Expected ':'."
@@ -62,7 +64,7 @@ mod tests {
             .colon()
             .word("value")
             .generate_vec();
-        let error = SyntaxError::UnexpectedToken(token[2].clone(), "a space".to_string());
+        let error = SyntaxError::UnexpectedTokenError(token[2].clone(), "a space".to_string());
         assert_eq!(
             error.to_string(),
             "Syntax error: Unexpected token 'value' at index 5. Expected a space."
@@ -72,7 +74,7 @@ mod tests {
     #[test]
     fn should_display_newline_char_correctly() {
         let (token, _) = TestTokenBuilder::new().word("test").generate_vec();
-        let error = SyntaxError::UnexpectedToken(token[0].clone(), "'\n'".to_string());
+        let error = SyntaxError::UnexpectedTokenError(token[0].clone(), "'\n'".to_string());
         assert_eq!(
             error.to_string(),
             "Syntax error: Unexpected token 'test' at index 0. Expected '\n'."
