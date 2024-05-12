@@ -32,7 +32,7 @@ fn recurse_footers(tokens: &mut TokenIter) -> Result<Option<Vec<Symbol>>, Syntax
         None => Ok(None),
         Some(key) => {
             let footer = Symbol::Footer {
-                key,
+                start_delimiter: key,
                 text_tokens: parse_footer_text(tokens)?,
             };
 

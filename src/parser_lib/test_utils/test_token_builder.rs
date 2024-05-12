@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::parser_lib::{
     lexer::types::{Token, WordDetails},
-    parser::types::TokenIter,
+    parser::types::{CommitMessage, TokenIter},
     SlicableRcString,
 };
 
@@ -23,27 +23,27 @@ enum TokenType {
 pub struct TestTokenBuilder {
     test_token_buf: Vec<TokenType>,
     string: String,
-    topic: Option<String>,
+    topic: Option<ExpectedValue>,
     scope: Option<ExpectedValue>,
     description: Option<ExpectedValue>,
     body: Option<ExpectedValue>,
-    footers: Option<Vec<String>>,
+    footers: Option<Vec<ExpectedValue>>,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ExpectedValue {
     pub no_delims: String,
     pub full: String,
 }
+
 #[derive(Debug, Clone)]
-pub struct ExpectedStrings {
-    pub topic: Option<String>,
+pub struct TestStrings {
+    pub topic: Option<ExpectedValue>,
     pub scope: Option<ExpectedValue>,
     pub description: Option<ExpectedValue>,
     pub body: Option<ExpectedValue>,
-    pub footers: Option<Vec<String>>,
+    pub footers: Option<Vec<ExpectedValue>>,
 }
 
-#[allow(dead_code)]
 pub struct TestTokenBodyBuilder {
     test_token_buf: Vec<TokenType>,
     string: String,
@@ -159,7 +159,10 @@ impl TestTokenBuilder {
 
     /// Alias for word(&mut self, value: &str)
     pub fn topic(&mut self, value: &str) -> &mut Self {
-        self.topic = Some(value.to_string());
+        self.topic = Some(ExpectedValue {
+            no_delims: value.to_string(),
+            full: value.to_string(),
+        });
         self.word(value);
         return self;
     }
@@ -211,7 +214,13 @@ impl TestTokenBuilder {
         return self;
     }
 
-    pub fn colon_footer(&mut self, value: &str) -> &mut Self {
+    pub fn colon_footer(&mut self, input: &str, add_newline: bool) -> &mut Self {
+        let value = if add_newline {
+            format!("{}{}", input, "\n")
+        } else {
+            input.to_string()
+        };
+
         if self.footers.is_none() {
             self.footers = Some(Vec::new());
         }
@@ -219,13 +228,25 @@ impl TestTokenBuilder {
         self.word(parts.next().unwrap())
             .colon()
             .space()
-            .string(parts.next().unwrap())
-            .newline();
-        self.footers.as_mut().unwrap().push(format!("{}\n", value));
+            .string(parts.next().unwrap());
+        if add_newline {
+            self.newline();
+        }
+
+        self.footers.as_mut().unwrap().push(ExpectedValue {
+            full: format!("{}", value),
+            no_delims: format!("{}", value),
+        });
         return self;
     }
 
-    pub fn hash_footer(&mut self, value: &str) -> &mut Self {
+    pub fn hash_footer(&mut self, input: &str, add_newline: bool) -> &mut Self {
+        let value = if add_newline {
+            format!("{}{}", input, "\n")
+        } else {
+            input.to_string()
+        };
+
         if self.footers.is_none() {
             self.footers = Some(Vec::new());
         }
@@ -233,9 +254,14 @@ impl TestTokenBuilder {
         self.word(parts.next().unwrap())
             .space()
             .hash()
-            .string(parts.next().unwrap())
-            .newline();
-        self.footers.as_mut().unwrap().push(format!("{}\n", value));
+            .string(parts.next().unwrap());
+        if add_newline {
+            self.newline();
+        }
+        self.footers.as_mut().unwrap().push(ExpectedValue {
+            full: format!("{}", value),
+            no_delims: format!("{}", value),
+        });
         return self;
     }
 
@@ -251,7 +277,10 @@ impl TestTokenBuilder {
         builder_fn(&mut footer_builder);
         self.test_token_buf.extend(footer_builder.get_token_buf());
         let footer = footer_builder.string.clone().split_off(self.string.len());
-        self.footers.as_mut().unwrap().push(footer);
+        self.footers.as_mut().unwrap().push(ExpectedValue {
+            full: footer.clone(),
+            no_delims: footer.clone(),
+        });
         self.string = footer_builder.string;
         return self;
     }
@@ -260,7 +289,7 @@ impl TestTokenBuilder {
         self.test_token_buf.clone()
     }
 
-    pub fn generate_vec(&mut self) -> (Vec<Token>, ExpectedStrings) {
+    pub fn generate_vec(&mut self) -> (Vec<Token>, TestStrings) {
         let mut tokens: Vec<Token> = Vec::new();
         let slicable_rc_string = SlicableRcString::new(Rc::new(self.string.clone()));
         for token in self.test_token_buf.iter() {
@@ -295,7 +324,7 @@ impl TestTokenBuilder {
         }
         return (
             tokens,
-            ExpectedStrings {
+            TestStrings {
                 topic: self.topic.take(),
                 scope: self.scope.take(),
                 description: self.description.take(),
@@ -305,7 +334,7 @@ impl TestTokenBuilder {
         );
     }
 
-    pub fn generate_iter(&mut self) -> (TokenIter, ExpectedStrings) {
+    pub fn generate_iter(&mut self) -> (TokenIter, TestStrings) {
         let (tokens, expected) = self.generate_vec();
         return (tokens.into_iter().multipeek(), expected);
     }
@@ -322,11 +351,20 @@ mod tests {
             .scope("scope")
             .description("description")
             .body(|builder| builder.string("this is a body").newline())
-            .colon_footer("footer: footer")
-            .hash_footer("footer #footer")
+            .colon_footer("footer: footer", true)
+            .hash_footer("footer #footer", true)
+            .multi_line_footer(|builder| {
+                builder
+                    .colon_footer("multi: line", false)
+                    .newline()
+                    .string("footer")
+            })
             .generate_vec();
 
-        assert_eq!(expected.topic, Some("topic".to_string()));
+        assert!(
+            matches!(expected.topic, Some(topic) if topic.no_delims == "topic" && topic.full == "topic"),
+            "Topic should match"
+        );
         assert!(
             matches!(expected.scope, Some(scope) if scope.no_delims == "scope" && scope.full == "(scope)"),
             "Scope should match"
@@ -353,11 +391,22 @@ mod tests {
             "Full body didn't match\nExpected: \\n\\nthis is a body\\n\nGot: {}",
             expected.body.unwrap().full
         );
+
         assert_eq!(
             expected.footers,
             Some(vec![
-                "footer: footer\n".to_string(),
-                "footer #footer\n".to_string()
+                ExpectedValue {
+                    no_delims: "footer: footer\n".to_string(),
+                    full: "footer: footer\n".to_string()
+                },
+                ExpectedValue {
+                    no_delims: "footer #footer\n".to_string(),
+                    full: "footer #footer\n".to_string()
+                },
+                ExpectedValue {
+                    no_delims: "multi: line\nfooter".to_string(),
+                    full: "multi: line\nfooter".to_string()
+                }
             ])
         );
     }

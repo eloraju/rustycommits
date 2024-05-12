@@ -110,7 +110,7 @@ mod tests {
         let (mut tokens, _) = TestTokenBuilder::new()
             .body(|builder| builder.string("this is a body"))
             .newline()
-            .colon_footer("test: this is a footer")
+            .colon_footer("test: this is a footer", true)
             .generate_iter();
 
         let result = parse_body(&mut tokens);

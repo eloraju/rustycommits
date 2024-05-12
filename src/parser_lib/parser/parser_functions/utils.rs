@@ -78,8 +78,3 @@ trait TakeUntilSectionSeparation {
     fn take_until_footer(&mut self) -> Result<Vec<Token>, SyntaxError>;
     fn take_until_body(&mut self) -> Result<Vec<Token>, SyntaxError>;
 }
-
-impl TakeUntilSectionSeparation for MultiPeek<IntoIter<Token>> {
-    fn take_until_footer(&mut self) -> Result<Vec<Token>, SyntaxError> {}
-    fn take_until_body(&mut self) -> Result<Vec<Token>, SyntaxError> {}
-}

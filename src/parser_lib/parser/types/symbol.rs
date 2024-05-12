@@ -40,8 +40,8 @@ pub enum Symbol {
         text_tokens: Vec<Token>,
     },
     Footer {
-        // Key is either 'word: ' or 'word #word'
-        key: Vec<Token>,
+        // Delimiter is either 'word: ' or 'word #word'
+        start_delimiter: Vec<Token>,
         text_tokens: Vec<Token>,
     },
 }
@@ -56,7 +56,10 @@ impl Symbol {
                 text_tokens: tokens,
                 ..
             } => tokens.iter().collect(),
-            Symbol::Footer { key, text_tokens } => {
+            Symbol::Footer {
+                start_delimiter: key,
+                text_tokens,
+            } => {
                 let mut tokens: Vec<&Token> = Vec::new();
                 tokens.extend(key);
                 tokens.extend(text_tokens);
@@ -101,7 +104,7 @@ impl Symbol {
             }
 
             Symbol::Footer {
-                key,
+                start_delimiter: key,
                 text_tokens: value,
             } => {
                 let mut tokens: Vec<&Token> = Vec::new();
@@ -137,5 +140,31 @@ impl Symbol {
 
     pub fn end_i(&self) -> usize {
         return self.get_all_tokens().last().unwrap().get_end_index();
+    }
+
+    pub fn delimiters(&self) -> Option<(Option<String>, Option<String>)> {
+        match self {
+            Symbol::Topic { .. } => None,
+            Symbol::Scope {
+                start_delimiter,
+                end_delimiter,
+                ..
+            } => Some((
+                Some(start_delimiter.get_value()),
+                Some(end_delimiter.get_value()),
+            )),
+            Symbol::Description {
+                start_delimiter, ..
+            }
+            | Symbol::Body {
+                start_delimiter, ..
+            }
+            | Symbol::Footer {
+                start_delimiter, ..
+            } => Some((
+                Some(start_delimiter.iter().map(|t| t.get_value()).collect()),
+                None,
+            )),
+        }
     }
 }
