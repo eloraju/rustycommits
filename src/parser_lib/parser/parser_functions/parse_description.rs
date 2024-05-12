@@ -11,7 +11,7 @@ fn check_bang(tokens: &mut TokenIter) -> Result<Option<Token>, SyntaxError> {
     match current {
         Some(Token::Bang(_)) => Ok(tokens.next()),
         Some(_) => Ok(None),
-        None => Err(SyntaxError::UnexpectedEndOfFileError),
+        None => Err(SyntaxError::UnexpectedEndOfFile),
     }
 }
 
@@ -28,14 +28,14 @@ fn check_start_delimiter(tokens: &mut TokenIter) -> Result<Vec<Token>, SyntaxErr
         }
 
         (Some(_), _) => Err(SyntaxError::expected_colon(current.unwrap())),
-        (None, _) => Err(SyntaxError::UnexpectedEndOfFileError),
+        (None, _) => Err(SyntaxError::UnexpectedEndOfFile),
     }
 }
 
 fn take_words(tokens: &mut TokenIter) -> Result<Vec<Token>, SyntaxError> {
     let next = tokens.peek();
     if next.is_none() {
-        return Err(SyntaxError::UnexpectedEndOfFileError);
+        return Err(SyntaxError::UnexpectedEndOfFile);
     }
 
     Ok(tokens

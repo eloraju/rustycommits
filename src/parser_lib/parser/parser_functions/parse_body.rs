@@ -25,7 +25,7 @@ pub fn parse_body(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError>
     let start_delimiter = parse_start_delimiter(tokens);
     match (&start_delimiter, tokens.peek()) {
         (None, Some(toke)) => {
-            return Err(SyntaxError::UnexpectedTokenError(
+            return Err(SyntaxError::UnexpectedToken(
                 toke.to_owned().clone(),
                 "No newline before body".to_string(),
             ))

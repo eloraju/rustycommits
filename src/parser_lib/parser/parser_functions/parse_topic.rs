@@ -11,7 +11,7 @@ pub fn parse_topic(tokens: &mut TokenIter) -> Result<Symbol, SyntaxError> {
             text_token: current.unwrap(),
         }),
         Some(token) => Err(SyntaxError::expected_string(token)),
-        None => Err(SyntaxError::UnexpectedEndOfFileError),
+        None => Err(SyntaxError::UnexpectedEndOfFile),
     }
 }
 
@@ -34,7 +34,7 @@ mod tests {
     fn should_return_error() {
         let (mut tokens, _) = TestTokenBuilder::new().colon().generate_iter();
         let res = parse_topic(&mut tokens);
-        assert!(matches!(res, Err(SyntaxError::UnexpectedTokenError(..))));
+        assert!(matches!(res, Err(SyntaxError::UnexpectedToken(..))));
         assert_eq!(
             res.unwrap_err().to_string(),
             "Syntax error: Unexpected token ':' at index 0. Expected a string."

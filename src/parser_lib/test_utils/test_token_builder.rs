@@ -5,7 +5,7 @@ use itertools::Itertools;
 
 use crate::parser_lib::{
     lexer::types::{Token, WordDetails},
-    parser::types::{CommitMessage, TokenIter},
+    parser::types::TokenIter,
     SlicableRcString,
 };
 
@@ -43,7 +43,7 @@ pub struct TestStrings {
     pub body: Option<ExpectedValue>,
     pub footers: Option<Vec<ExpectedValue>>,
 }
-
+#[allow(dead_code)]
 pub struct TestTokenBodyBuilder {
     test_token_buf: Vec<TokenType>,
     string: String,

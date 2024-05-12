@@ -1,6 +1,4 @@
-use std::vec::IntoIter;
-
-use itertools::{Itertools, MultiPeek};
+use itertools::Itertools;
 
 use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::TokenIter};
 
@@ -52,7 +50,7 @@ pub fn take_until_newline_cond(
             text_tokens.extend(take_until_newline_cond(tokens, breakout)?);
             Ok(text_tokens)
         }
-        Some(token) => Err(SyntaxError::UnexpectedTokenError(
+        Some(token) => Err(SyntaxError::UnexpectedToken(
             token.to_owned().clone(),
             "this not to get here in the first place.".to_string(),
         )),
