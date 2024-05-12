@@ -39,10 +39,7 @@ fn take_words(tokens: &mut TokenIter) -> Result<Vec<Token>, SyntaxError> {
     }
 
     Ok(tokens
-        .take_while_ref(|token| match token {
-            Token::Newline(_) => false,
-            _ => true,
-        })
+        .take_while_ref(|token| !matches!(token, Token::Newline(_)))
         .collect_vec())
 }
 
