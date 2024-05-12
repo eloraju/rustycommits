@@ -1,7 +1,7 @@
 use crate::parser_lib::{
     errors::SyntaxError,
-    lexer::types::Token,
-    parser::types::{Symbol, TokenIter},
+    lexing::types::Token,
+    parsing::types::{Symbol, TokenIter},
 };
 
 use super::utils::{has_footer_start, take_until_newline_cond};

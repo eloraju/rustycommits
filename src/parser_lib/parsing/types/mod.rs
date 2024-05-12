@@ -5,7 +5,7 @@ use std::vec::IntoIter;
 
 use itertools::MultiPeek;
 
-use crate::parser_lib::lexer::types::Token;
+use crate::parser_lib::lexing::types::Token;
 
 pub use self::parser_result::CommitMessage;
 pub use self::symbol::Symbol;

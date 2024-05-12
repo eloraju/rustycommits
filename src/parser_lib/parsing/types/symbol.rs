@@ -1,4 +1,4 @@
-use crate::parser_lib::{lexer::types::Token, SlicableRcString};
+use crate::parser_lib::{lexing::types::Token, SlicableRcString};
 
 trait SRcStringFromTokens {
     fn to_srcs(&self) -> SlicableRcString;

@@ -1,7 +1,7 @@
 use crate::parser_lib::{
     errors::SyntaxError,
-    lexer::types::Token,
-    parser::types::{Symbol, TokenIter},
+    lexing::types::Token,
+    parsing::types::{Symbol, TokenIter},
 };
 
 fn check_start_delimiter(tokens: &mut TokenIter) -> Result<Option<Token>, SyntaxError> {
@@ -54,7 +54,7 @@ pub fn parse_scope(tokens: &mut TokenIter) -> Result<Option<Symbol>, SyntaxError
 #[cfg(test)]
 mod tests {
     use crate::parser_lib::{
-        parser::{parser_functions::parse_scope, types::Symbol},
+        parsing::{parser_functions::parse_scope, types::Symbol},
         test_utils::TestTokenBuilder,
     };
 

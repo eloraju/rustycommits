@@ -4,8 +4,8 @@ use std::rc::Rc;
 use itertools::Itertools;
 
 use crate::parser_lib::{
-    lexer::types::{Token, WordDetails},
-    parser::types::TokenIter,
+    lexing::types::{Token, WordDetails},
+    parsing::types::TokenIter,
     SlicableRcString,
 };
 

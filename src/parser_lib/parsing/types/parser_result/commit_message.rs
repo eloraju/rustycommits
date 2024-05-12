@@ -1,4 +1,4 @@
-use crate::parser_lib::parser::types::Symbol;
+use crate::parser_lib::parsing::types::Symbol;
 
 #[derive(Debug, Clone)]
 pub struct CommitMessage {

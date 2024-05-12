@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::parser_lib::{errors::SyntaxError, lexer::types::Token, parser::types::TokenIter};
+use crate::parser_lib::{errors::SyntaxError, lexing::types::Token, parsing::types::TokenIter};
 
 pub fn has_footer_start(orig: &mut TokenIter) -> Result<bool, SyntaxError> {
     orig.reset_peek();

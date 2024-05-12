@@ -1,12 +1,12 @@
 mod errors;
-mod lexer;
-mod parser;
+mod lexing;
+mod parsing;
 mod slicable_rc_string;
 
 pub use slicable_rc_string::SlicableRcString;
 use std::rc::Rc;
 
-use self::{errors::SyntaxError, lexer::Lexer, parser::types::CommitMessage};
+use self::{errors::SyntaxError, lexing::Lexer, parsing::types::CommitMessage};
 
 pub struct CommitMessageParser {
     lexer: Lexer,
@@ -28,7 +28,7 @@ impl CommitMessageParser {
     pub fn parse(&mut self, commit_message: String) -> Result<CommitMessage, SyntaxError> {
         let message = Rc::new(commit_message);
         let tokens = self.lexer.process(&message);
-        parser::Parser::process(tokens)
+        parsing::Parser::process(tokens)
     }
 }
 

@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-use super::lexer::types::Token;
+use super::lexing::types::Token;
 
 #[derive(Error, Debug)]
 pub enum SyntaxError {

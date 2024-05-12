@@ -2,8 +2,8 @@ use itertools::Itertools;
 
 use crate::parser_lib::{
     errors::SyntaxError,
-    lexer::types::Token,
-    parser::types::{Symbol, TokenIter},
+    lexing::types::Token,
+    parsing::types::{Symbol, TokenIter},
 };
 
 fn check_bang(tokens: &mut TokenIter) -> Result<Option<Token>, SyntaxError> {
@@ -59,7 +59,7 @@ pub fn parse_description(tokens: &mut TokenIter) -> Result<Symbol, SyntaxError> 
 mod tests {
     use itertools::Itertools;
 
-    use crate::parser_lib::{parser::types::Symbol, test_utils::TestTokenBuilder};
+    use crate::parser_lib::{parsing::types::Symbol, test_utils::TestTokenBuilder};
 
     use super::parse_description;
     #[test]

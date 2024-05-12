@@ -1,7 +1,7 @@
 use crate::parser_lib::{
     errors::SyntaxError,
-    lexer::types::Token,
-    parser::types::{Symbol, TokenIter},
+    lexing::types::Token,
+    parsing::types::{Symbol, TokenIter},
 };
 // Type is a single word, a bang is the only char we're interested in
 pub fn parse_topic(tokens: &mut TokenIter) -> Result<Symbol, SyntaxError> {

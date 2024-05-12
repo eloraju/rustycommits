@@ -1,9 +1,9 @@
 mod test_token_builder;
 pub use test_token_builder::{ExpectedValue, TestStrings, TestTokenBuilder};
 
-use crate::parser_lib::parser::types::CommitMessage;
+use crate::parser_lib::parsing::types::CommitMessage;
 
-use super::parser::types::Symbol;
+use super::parsing::types::Symbol;
 pub fn assert_commit_message_eq_expected(msg: CommitMessage, expected: TestStrings) {
     assert_part_value_eq_expected(msg.topic, expected.topic, "Topic");
     assert_part_value_eq_expected(msg.scope, expected.scope, "Scope");

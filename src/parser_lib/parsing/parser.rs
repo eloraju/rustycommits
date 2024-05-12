@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::parser_lib::{errors::SyntaxError, lexer::types::Token};
+use crate::parser_lib::{errors::SyntaxError, lexing::types::Token};
 
 use super::{
     parser_functions::{parse_body, parse_description, parse_footers, parse_scope, parse_topic},
