@@ -70,7 +70,7 @@ mod tests {
             .generate_iter();
         let symbol = parse_footers(&mut tokens).unwrap().unwrap().pop().unwrap();
         assert!(matches!(symbol, Symbol::Footer { .. }));
-        assert_eq!(symbol.no_delims_string(), "footer: this");
+        assert_eq!(symbol.content_string(), "footer: this");
     }
 
     #[test]
@@ -90,7 +90,7 @@ mod tests {
         assert_eq!(symbols.len(), 2);
         assert!(matches!(symbols[0], Symbol::Footer { .. }));
         assert!(matches!(symbols[1], Symbol::Footer { .. }));
-        assert_eq!(symbols[0].no_delims_string(), "footer: this\n");
-        assert_eq!(symbols[1].no_delims_string(), "another-footer #12");
+        assert_eq!(symbols[0].content_string(), "footer: this\n");
+        assert_eq!(symbols[1].content_string(), "another-footer #12");
     }
 }

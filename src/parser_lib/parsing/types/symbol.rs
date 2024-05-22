@@ -118,7 +118,7 @@ impl Symbol {
         self.get_all_tokens().to_srcs().to_string()
     }
 
-    pub fn no_delims_string(&self) -> String {
+    pub fn content_string(&self) -> String {
         self.get_content_tokens().to_srcs().to_string()
     }
 

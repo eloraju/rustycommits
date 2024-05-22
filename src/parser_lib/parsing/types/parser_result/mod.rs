@@ -1,3 +1,3 @@
 mod commit_message;
 
-pub use commit_message::CommitMessage;
+pub use commit_message::*;

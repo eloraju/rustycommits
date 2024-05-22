@@ -87,7 +87,7 @@ mod tests {
                 assert_eq!(start_delimiter.len(), 2);
                 assert_eq!(text_tokens.len(), 5);
                 assert_eq!(symbol.full_string(), ": description is this");
-                assert_eq!(symbol.no_delims_string(), "description is this");
+                assert_eq!(symbol.content_string(), "description is this");
             }
             _ => panic!("Error: {:?}", symbol),
         }

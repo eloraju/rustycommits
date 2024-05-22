@@ -46,11 +46,11 @@ fn assert_part_value_eq_expected(
     match (&part, &expected) {
         (Some(part), Some(expected)) => {
             assert!(
-                part.no_delims_string() == expected.no_delims,
+                part.content_string() == expected.no_delims,
                 "{} (no delims) didn't match.\nexpect = \"{}\"\nactual = \"{}\"",
                 part_name,
                 expected.no_delims,
-                part.no_delims_string()
+                part.content_string()
             );
             assert!(
                 part.full_string() == expected.full,
@@ -62,7 +62,7 @@ fn assert_part_value_eq_expected(
         }
         (None, None) => {}
         _ => panic!(
-            "Part and expected value should both be Some or None\npart: \"{:?}\"\nexpected: \"{:?}\"",
+            "Part and expected value should both be Some \npart: \"{:?}\"\nexpected: \"{:?}\"",
             part, expected
         ),
     }

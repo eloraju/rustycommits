@@ -72,7 +72,7 @@ mod tests {
                     "symbol.full_string()"
                 );
                 assert_eq!(
-                    symbol.no_delims_string(),
+                    symbol.content_string(),
                     "this is a body\n\n",
                     "symbol.no_delims_string()"
                 );
@@ -118,7 +118,7 @@ mod tests {
         let left: Vec<Token> = tokens.collect();
         assert!(left.len() > 0);
         assert_eq!(left.len(), 11);
-        assert_eq!(symbol.no_delims_string(), "this is a body\n");
+        assert_eq!(symbol.content_string(), "this is a body\n");
         assert_eq!(symbol.full_string(), "\n\nthis is a body\n");
         let left_str = left.iter().map(|t| t.get_value()).collect::<String>();
         assert_eq!(left_str, "test: this is a footer\n");

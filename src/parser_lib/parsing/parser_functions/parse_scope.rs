@@ -71,6 +71,6 @@ mod tests {
         assert_eq!(symbol.content_length(), 5);
         assert_eq!(symbol.total_length(), 7);
         assert_eq!(symbol.full_string(), "(scope)");
-        assert_eq!(symbol.no_delims_string(), "scope");
+        assert_eq!(symbol.content_string(), "scope");
     }
 }
