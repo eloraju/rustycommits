@@ -17,6 +17,9 @@ impl Parser {
         let body = parse_body(&mut tokens_iter)?;
         let footers = parse_footers(&mut tokens_iter)?;
 
+        // At this point, I'm happy to have used Rc<string>, but now I just want to move onwards.
+        // I'll just clone the strings and move on. Maybe I'll switch to RC<string> later on
+
         Ok(CommitMessage {
             topic: Some(topic),
             scope,

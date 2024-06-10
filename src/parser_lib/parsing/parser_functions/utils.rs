@@ -63,8 +63,3 @@ pub fn has_double_newline(tokens: &mut TokenIter) -> bool {
 
     result
 }
-
-trait TakeUntilSectionSeparation {
-    fn take_until_footer(&mut self) -> Result<Vec<Token>, SyntaxError>;
-    fn take_until_body(&mut self) -> Result<Vec<Token>, SyntaxError>;
-}

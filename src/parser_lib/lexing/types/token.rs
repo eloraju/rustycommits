@@ -167,3 +167,9 @@ impl Display for Token {
         }
     }
 }
+
+impl ToString for Token {
+    fn to_string(&self) -> String {
+        self.get_value()
+    }
+}

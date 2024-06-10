@@ -142,29 +142,43 @@ impl Symbol {
         return self.get_all_tokens().last().unwrap().get_end_index();
     }
 
-    pub fn delimiters(&self) -> Option<(Option<String>, Option<String>)> {
+    pub fn end_delimiter(&self) -> Option<String> {
         match self {
-            Symbol::Topic { .. } => None,
+            Symbol::Scope { end_delimiter, .. } => Some(end_delimiter.get_value()),
+            _ => None,
+        }
+    }
+
+    pub fn start_delimiter(&self) -> Option<String> {
+        match self {
             Symbol::Scope {
-                start_delimiter,
-                end_delimiter,
-                ..
-            } => Some((
-                Some(start_delimiter.get_value()),
-                Some(end_delimiter.get_value()),
-            )),
+                start_delimiter, ..
+            } => Some(start_delimiter.get_value()),
             Symbol::Description {
                 start_delimiter, ..
-            }
-            | Symbol::Body {
+            } => Some(
+                start_delimiter
+                    .iter
+                    .map(|t| t.to_string())
+                    .collect::<String>(),
+            ),
+            Symbol::Body {
                 start_delimiter, ..
-            }
-            | Symbol::Footer {
+            } => Some(
+                start_delimiter
+                    .iter
+                    .map(|t| t.to_string())
+                    .collect::<String>(),
+            ),
+            Symbol::Footer {
                 start_delimiter, ..
-            } => Some((
-                Some(start_delimiter.iter().map(|t| t.get_value()).collect()),
-                None,
-            )),
+            } => Some(
+                start_delimiter
+                    .iter
+                    .map(|t| t.to_string())
+                    .collect::<String>(),
+            ),
+            _ => None,
         }
     }
 }
